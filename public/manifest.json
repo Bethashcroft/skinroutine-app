@@ -1,0 +1,17 @@
+{
+  "name": "SkinRoutine",
+  "short_name": "SkinRoutine",
+  "description": "Your personal skincare diary",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fdf8f3",
+  "theme_color": "#e8b376",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
