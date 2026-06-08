@@ -8,9 +8,11 @@ import { FLAG_META } from '../data/ingredient-flags';
 import { SKIN_TYPES, CONCERNS, getRecommendationsWithReasons } from '../data/skin-recommendations';
 import { detectLibraryConflicts, getProductsByExpiry, getProductExpiryDate } from '../data/conflicts';
 import LibraryConflictPanel from '../components/LibraryConflictPanel';
+import SkinProfileEditor from '../components/SkinProfileEditor';
+import Toast from '../components/Toast';
 import { detectFlagsFromIngredients } from '../data/product-search';
 import { flagOptionsToFlags } from '../data/ingredient-flags';
-import type { Product, FlagCategory, SkinType, Concern } from '../types';
+import type { Product, FlagCategory } from '../types';
 
 const RATING_EMOJI: Record<number, string> = { 1: '😣', 2: '😕', 3: '😐', 4: '🙂', 5: '✨' };
 
@@ -41,8 +43,8 @@ export default function Dashboard() {
   const { entries, getEntriesForDate, getStreak, getLast7DaysRatings } = useRoutineLog();
   const { profile, setProfile } = useSkinProfile();
   const [editingProfile, setEditingProfile] = useState(false);
-  const [draftSkinType, setDraftSkinType] = useState<SkinType>('normal');
-  const [draftConcerns, setDraftConcerns] = useState<Concern[]>([]);
+  const [duplicateProduct, setDuplicateProduct] = useState<string | null>(null);
+  const [justAdded, setJustAdded] = useState<Set<string>>(new Set());
 
   const today = toLocalDateString(new Date());
   const todayEntries = getEntriesForDate(today);
@@ -76,6 +78,14 @@ export default function Dashboard() {
   );
 
   const handleAddRecommendation = useCallback((rec: typeof recommendations[number]['product']) => {
+    const duplicate = products.find(
+      (p) => p.name.toLowerCase() === rec.name.toLowerCase() &&
+             p.brand.toLowerCase() === rec.brand.toLowerCase(),
+    );
+    if (duplicate) {
+      setDuplicateProduct(duplicate.name);
+      return;
+    }
     const flagKeys = detectFlagsFromIngredients(rec.ingredients);
     const flags = flagOptionsToFlags(flagKeys);
     addProduct({
@@ -85,7 +95,8 @@ export default function Dashboard() {
       flags,
       ingredients: rec.ingredients,
     });
-  }, [addProduct]);
+    setJustAdded((prev) => new Set([...prev, `${rec.name.toLowerCase()}|${rec.brand.toLowerCase()}`]));
+  }, [addProduct, products]);
 
   const flagWarnings = useMemo(() => {
     const last7 = new Set<string>();
@@ -152,11 +163,8 @@ export default function Dashboard() {
         <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/15 dark:border-white/8">
           <h3 className="font-bold text-gray-800 dark:text-gray-100 tracking-tight">Your Skin Profile</h3>
           {profile && !editingProfile && (
-            <button type="button" onClick={() => {
-              setDraftSkinType(profile.skinType);
-              setDraftConcerns([...profile.concerns]);
-              setEditingProfile(true);
-            }} className="btn-ghost px-3! py-1.5! text-xs! rounded-lg!">
+            <button type="button" onClick={() => setEditingProfile(true)}
+              className="btn-ghost px-3! py-1.5! text-xs! rounded-lg!">
               Edit
             </button>
           )}
@@ -169,79 +177,23 @@ export default function Dashboard() {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setDraftSkinType('normal');
-                setDraftConcerns([]);
-                setEditingProfile(true);
-              }}
+              onClick={() => setEditingProfile(true)}
               className="btn-primary mt-4 w-full sm:w-auto"
             >
               Set up skin profile
             </button>
           </div>
         ) : editingProfile ? (
-            <div className="px-5 sm:px-6 py-4 space-y-4">
-              <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Skin type</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {SKIN_TYPES.map((t) => (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setDraftSkinType(t.value)}
-                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all border
-                        ${draftSkinType === t.value
-                          ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
-                          : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
-                        }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                  Concerns
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {CONCERNS.map((c) => {
-                    const active = draftConcerns.includes(c.value);
-                    return (
-                      <button
-                        key={c.value}
-                        type="button"
-                        onClick={() => {
-                          if (active) {
-                            setDraftConcerns(draftConcerns.filter((x) => x !== c.value));
-                          } else {
-                            setDraftConcerns([...draftConcerns, c.value]);
-                          }
-                        }}
-                        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all border
-                          ${active
-                            ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
-                            : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
-                          }`}
-                      >
-                        {c.icon} {c.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="flex gap-2 pt-1 justify-end">
-                <button type="button" onClick={async () => {
-                  await setProfile({ skinType: draftSkinType, concerns: draftConcerns });
+            <div className="px-5 sm:px-6 py-4">
+              <SkinProfileEditor
+                initialSkinType={profile?.skinType ?? 'normal'}
+                initialConcerns={profile?.concerns ?? []}
+                onSave={async (p) => {
+                  await setProfile(p);
                   setEditingProfile(false);
-                }} className="btn-primary px-4! py-1.5! text-xs!">
-                  Save
-                </button>
-                <button type="button" onClick={() => setEditingProfile(false)}
-                  className="btn-ghost px-4! py-1.5! text-xs!">
-                  Cancel
-                </button>
-              </div>
+                }}
+                onCancel={() => setEditingProfile(false)}
+              />
             </div>
           ) : profile ? (
             <div className="px-5 sm:px-6 py-4 flex flex-wrap items-center gap-2">
@@ -313,15 +265,24 @@ export default function Dashboard() {
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleAddRecommendation(rec)}
-                  className="shrink-0 rounded-lg bg-sand-500/15 dark:bg-sand-400/10 border border-sand-400/25 dark:border-sand-500/15
-                             px-3 py-1.5 text-xs font-semibold text-sand-700 dark:text-sand-300
-                             hover:bg-sand-500/25 dark:hover:bg-sand-400/20 transition-colors"
-                >
-                  + Add
-                </button>
+                {(() => {
+                  const addedKey = `${rec.name.toLowerCase()}|${rec.brand.toLowerCase()}`;
+                  const added = justAdded.has(addedKey);
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => handleAddRecommendation(rec)}
+                      disabled={added}
+                      className={`shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                        added
+                          ? 'bg-emerald-500/15 dark:bg-emerald-500/10 border-emerald-400/25 dark:border-emerald-500/15 text-emerald-700 dark:text-emerald-400 cursor-default'
+                          : 'bg-sand-500/15 dark:bg-sand-400/10 border-sand-400/25 dark:border-sand-500/15 text-sand-700 dark:text-sand-300 hover:bg-sand-500/25 dark:hover:bg-sand-400/20'
+                      }`}
+                    >
+                      {added ? '✓ Added' : '+ Add'}
+                    </button>
+                  );
+                })()}
               </div>
             ))}
           </div>
@@ -477,6 +438,15 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+
+      {duplicateProduct && (
+        <Toast
+          variant="warning"
+          title="Already in your library"
+          message={<><strong className="text-gray-700 dark:text-gray-300">{duplicateProduct}</strong> has already been added. Try entering another or edit it in your library.</>}
+          onClose={() => setDuplicateProduct(null)}
+        />
+      )}
 
       {/* Flag warnings */}
       {flagWarnings.length > 0 && (

@@ -173,8 +173,15 @@ export default function Landing() {
         </button>
       </section>
 
-      <footer className="pb-8 text-center text-[10px] text-gray-400/30 dark:text-gray-600/40">
-        SkinRoutine
+      <footer className="pb-8 text-center text-[10px] text-gray-400/40 dark:text-gray-600/40 space-x-3">
+        <span>SkinRoutine</span>
+        <button
+          type="button"
+          onClick={() => navigate('/privacy')}
+          className="underline underline-offset-2 hover:text-gray-500 dark:hover:text-gray-400 transition-colors"
+        >
+          Privacy Policy
+        </button>
       </footer>
     </div>
   );

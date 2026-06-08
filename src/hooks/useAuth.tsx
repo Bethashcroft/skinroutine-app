@@ -12,6 +12,7 @@ interface AuthState {
   signInWithEmail: (email: string, password: string) => Promise<string | null>;
   signUpWithEmail: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthState>({
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthState>({
   signInWithEmail: async () => null,
   signUpWithEmail: async () => null,
   signOut: async () => {},
+  deleteAccount: async () => null,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -66,6 +68,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return error?.message ?? null;
   }, []);
 
+  const deleteAccount = useCallback(async (): Promise<string | null> => {
+    if (!supabase) return 'Supabase not configured';
+    const { error } = await supabase.rpc('delete_user');
+    if (error) return error.message;
+    // clear local data the same way signOut does
+    const userId = sessionRef.current?.user?.id;
+    await Promise.all([
+      dbDelete(LEGACY_PRODUCTS_KEY),
+      dbDelete(LEGACY_ENTRIES_KEY),
+      dbDelete('routinelog-user-catalog'),
+      userId ? dbDelete(productsKey(userId)) : Promise.resolve(),
+      userId ? dbDelete(entriesKey(userId)) : Promise.resolve(),
+      userId ? dbDelete(`skinroutine:onboarded:${userId}`) : Promise.resolve(),
+      userId ? dbDelete(`skinroutine:profile:${userId}`) : Promise.resolve(),
+    ]);
+    return null;
+  }, []);
+
   const sessionRef = useRef(session);
   sessionRef.current = session;
 
@@ -94,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithEmail,
         signUpWithEmail,
         signOut,
+        deleteAccount,
       }}
     >
       {children}

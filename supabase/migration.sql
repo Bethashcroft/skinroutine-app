@@ -27,16 +27,20 @@ create index if not exists idx_community_flags_product
 alter table community_products enable row level security;
 alter table community_flags enable row level security;
 
+-- Reads are public. All writes go exclusively through the security-definer
+-- upsert_community_flags() RPC below — never via direct table access, so that
+-- vote counts can't be arbitrarily set or zeroed by anonymous PostgREST calls.
+-- (Drop the old permissive write policies if a previous migration created them.)
+drop policy if exists "Anyone can insert community products" on community_products;
+drop policy if exists "Anyone can insert community flags" on community_flags;
+drop policy if exists "Anyone can update community flag votes" on community_flags;
+drop policy if exists "Anyone can read community products" on community_products;
+drop policy if exists "Anyone can read community flags" on community_flags;
+
 create policy "Anyone can read community products"
   on community_products for select using (true);
-create policy "Anyone can insert community products"
-  on community_products for insert with check (true);
 create policy "Anyone can read community flags"
   on community_flags for select using (true);
-create policy "Anyone can insert community flags"
-  on community_flags for insert with check (true);
-create policy "Anyone can update community flag votes"
-  on community_flags for update using (true) with check (true);
 
 create or replace function upsert_community_flags(
   p_name text,
@@ -94,6 +98,11 @@ create table if not exists user_entries (
   primary key (user_id, id)
 );
 
+-- Soft-delete tombstones: deletions are marked rather than removed, so they
+-- propagate to other devices on pull instead of being re-pushed as local-only.
+alter table user_products add column if not exists deleted_at timestamptz;
+alter table user_entries add column if not exists deleted_at timestamptz;
+
 create index if not exists idx_user_products_user on user_products (user_id);
 create index if not exists idx_user_entries_user on user_entries (user_id);
 create index if not exists idx_user_entries_date on user_entries (user_id, date);
@@ -102,6 +111,10 @@ alter table user_products enable row level security;
 alter table user_entries enable row level security;
 
 -- Users can only access their own data
+drop policy if exists "Users read own products" on user_products;
+drop policy if exists "Users insert own products" on user_products;
+drop policy if exists "Users update own products" on user_products;
+drop policy if exists "Users delete own products" on user_products;
 create policy "Users read own products"
   on user_products for select using (auth.uid() = user_id);
 create policy "Users insert own products"
@@ -111,6 +124,10 @@ create policy "Users update own products"
 create policy "Users delete own products"
   on user_products for delete using (auth.uid() = user_id);
 
+drop policy if exists "Users read own entries" on user_entries;
+drop policy if exists "Users insert own entries" on user_entries;
+drop policy if exists "Users update own entries" on user_entries;
+drop policy if exists "Users delete own entries" on user_entries;
 create policy "Users read own entries"
   on user_entries for select using (auth.uid() = user_id);
 create policy "Users insert own entries"
@@ -129,6 +146,10 @@ create table if not exists user_skin_profiles (
 
 alter table user_skin_profiles enable row level security;
 
+drop policy if exists "Users read own skin profile" on user_skin_profiles;
+drop policy if exists "Users insert own skin profile" on user_skin_profiles;
+drop policy if exists "Users update own skin profile" on user_skin_profiles;
+drop policy if exists "Users delete own skin profile" on user_skin_profiles;
 create policy "Users read own skin profile"
   on user_skin_profiles for select using (auth.uid() = user_id);
 create policy "Users insert own skin profile"
@@ -137,3 +158,18 @@ create policy "Users update own skin profile"
   on user_skin_profiles for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 create policy "Users delete own skin profile"
   on user_skin_profiles for delete using (auth.uid() = user_id);
+
+-- Account deletion: removes all user data and the auth record
+create or replace function delete_user()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from user_products where user_id = auth.uid();
+  delete from user_entries where user_id = auth.uid();
+  delete from user_skin_profiles where user_id = auth.uid();
+  delete from auth.users where id = auth.uid();
+end;
+$$;

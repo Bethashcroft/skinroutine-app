@@ -16,7 +16,7 @@ import { useAuth } from './useAuth';
 import { addToUserCatalog } from '../data/product-search';
 import { flagsToOptionKeys } from '../data/ingredient-flags';
 import { submitCommunityFlags } from '../lib/supabase';
-import { pushProducts, pullProducts, deleteRemoteProduct } from '../lib/sync';
+import { pushProducts, pullProducts, pullDeletedProductIds, deleteRemoteProduct } from '../lib/sync';
 import { dbGet, dbSet } from '../lib/db';
 import { productsKey, LEGACY_PRODUCTS_KEY } from '../lib/storage-keys';
 
@@ -80,17 +80,21 @@ function useProductsState(): ProductsContextValue {
     if (!isReady || hasSynced.current) return;
     hasSynced.current = true;
 
-    pullProducts()
-      .then((remote) => {
+    Promise.all([pullProducts(), pullDeletedProductIds()])
+      .then(([remote, deletedIds]) => {
         setIsNewUser(remote.length === 0);
+        const deletedSet = new Set(deletedIds);
         setProducts((local) => {
-          const localIds = new Set(local.map((p) => p.id));
+          // Drop anything deleted on another device before merging.
+          const survivingLocal = local.filter((p) => !deletedSet.has(p.id));
+          const localIds = new Set(survivingLocal.map((p) => p.id));
           const remoteIds = new Set(remote.map((p) => p.id));
-          const merged = [...local];
+          const merged = [...survivingLocal];
           for (const rp of remote) {
             if (!localIds.has(rp.id)) merged.push(rp);
           }
-          const localOnly = local.filter((p) => !remoteIds.has(p.id));
+          // Only push local products that are genuinely new (not tombstoned).
+          const localOnly = survivingLocal.filter((p) => !remoteIds.has(p.id));
           if (localOnly.length > 0) {
             pushProducts(localOnly).catch(() => {});
           }

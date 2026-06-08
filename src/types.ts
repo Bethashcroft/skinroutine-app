@@ -5,6 +5,7 @@ export type BuiltInCategory =
   | 'moisturiser'
   | 'spf'
   | 'treatment'
+  | 'mask'
   | 'other';
 
 export type ProductCategory = BuiltInCategory | (string & {});

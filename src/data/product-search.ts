@@ -117,15 +117,34 @@ const INGREDIENT_TO_FLAG: Record<string, string> = {
   'triticum vulgare germ oil': 'wheat-germ-oil',
 };
 
-// Short ingredient names that need word-boundary matching to avoid false positives.
-// "alcohol" must not match inside "benzyl alcohol", "cinnamyl alcohol", etc.
-const WORD_BOUNDARY_FLAGS: Record<string, string> = {
+// Ambiguous names that must match a *whole* comma-delimited INCI token, not a
+// substring. "alcohol" the drying irritant appears as its own token (", Alcohol,"),
+// whereas "Cetearyl Alcohol", "Benzyl Alcohol", "Cinnamyl Alcohol" and
+// "Alcohol Denat." are different ingredients and must NOT trip the plain flag.
+const TOKEN_EXACT_FLAGS: Record<string, string> = {
   'alcohol': 'alcohol',
 };
 
 // Sorted entries: longest ingredient names first to prevent partial matches
 const SORTED_ENTRIES = Object.entries(INGREDIENT_TO_FLAG)
   .sort((a, b) => b[0].length - a[0].length);
+
+// Split an INCI string into comma-delimited tokens, tracking each token's
+// starting offset in the original string (for substring highlighting).
+function tokenizeWithOffsets(text: string): { token: string; start: number }[] {
+  const result: { token: string; start: number }[] = [];
+  let start = 0;
+  for (const part of text.split(',')) {
+    result.push({ token: part, start });
+    start += part.length + 1; // +1 for the consumed comma
+  }
+  return result;
+}
+
+// Normalise a token for exact comparison: trim, lowercase, drop a trailing period.
+function normaliseToken(token: string): string {
+  return token.trim().toLowerCase().replace(/\.+$/, '').trim();
+}
 
 export function detectFlagsFromIngredients(ingredientsText: string): string[] {
   const lower = ingredientsText.toLowerCase();
@@ -137,12 +156,10 @@ export function detectFlagsFromIngredients(ingredientsText: string): string[] {
     }
   }
 
-  // Word-boundary checks for short/ambiguous names
-  for (const [ingredient, flagKey] of Object.entries(WORD_BOUNDARY_FLAGS)) {
-    const re = new RegExp(`(?<![a-z])${ingredient}(?![a-z])`, 'i');
-    if (re.test(lower)) {
-      found.add(flagKey);
-    }
+  // Whole-token checks for short/ambiguous names
+  for (const { token } of tokenizeWithOffsets(ingredientsText)) {
+    const flagKey = TOKEN_EXACT_FLAGS[normaliseToken(token)];
+    if (flagKey) found.add(flagKey);
   }
 
   return [...found];
@@ -160,11 +177,13 @@ export function findFlaggedSubstrings(ingredientsText: string): { start: number;
     }
   }
 
-  for (const [ingredient, flagKey] of Object.entries(WORD_BOUNDARY_FLAGS)) {
-    const re = new RegExp(`(?<![a-z])${ingredient}(?![a-z])`, 'gi');
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(lower)) !== null) {
-      matches.push({ start: m.index, end: m.index + m[0].length, flagKey });
+  for (const { token, start } of tokenizeWithOffsets(ingredientsText)) {
+    const norm = normaliseToken(token);
+    const flagKey = TOKEN_EXACT_FLAGS[norm];
+    if (!flagKey) continue;
+    const wordIdx = token.toLowerCase().indexOf(norm);
+    if (wordIdx >= 0) {
+      matches.push({ start: start + wordIdx, end: start + wordIdx + norm.length, flagKey });
     }
   }
 

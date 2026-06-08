@@ -614,6 +614,44 @@ const BUILT_IN_PRODUCTS: BuiltInProduct[] = [
     ingredients: 'Water, Aloe Barbadensis Leaf Juice, Glycerin, Squalane, Sodium Hyaluronate, Green Tea Extract, Niacinamide, Jojoba Esters, Cetearyl Olivate, Sorbitan Olivate, Panthenol, Allantoin, Tocopherol, Carbomer, Phenoxyethanol, Ethylhexylglycerin',
   },
 
+  // ── Face Masks ──
+  {
+    name: 'Pure Clay Mask - Purify & Mattify',
+    brand: "L'Oréal",
+    category: 'mask',
+    ingredients: 'Kaolin, Aqua, Bentonite, Glycerin, Silica, Niacinamide, Zinc PCA, Salicylic Acid, Cetearyl Alcohol, PEG-100 Stearate, Glyceryl Stearate, Carbomer, Phenoxyethanol, Disodium EDTA, Sodium Hydroxide',
+  },
+  {
+    name: 'Salicylic Acid 2% Masque',
+    brand: 'The Ordinary',
+    category: 'mask',
+    ingredients: 'Aqua, Kaolin, Salicylic Acid, Charcoal Powder, Glycerin, Propanediol, Cocamidopropyl Dimethylamine, Hydroxyethylcellulose, Citric Acid, Pentylene Glycol, Sodium Citrate, Phenoxyethanol, Chlorphenesin',
+  },
+  {
+    name: 'Ultimate Nourishing Rice Overnight Mask',
+    brand: 'COSRX',
+    category: 'mask',
+    ingredients: 'Oryza Sativa (Rice) Water, Glycerin, Niacinamide, Panthenol, Sodium Hyaluronate, Ceramide NP, Ceramide AP, Ceramide EOP, Phytosphingosine, Cholesterol, Sodium Lauroyl Lactylate, Allantoin, Beta-Glucan, Adenosine, Butylene Glycol, Carbomer, Xanthan Gum, Phenoxyethanol, Ethylhexylglycerin',
+  },
+  {
+    name: 'Moisture Bomb Hyaluronic Acid Sheet Mask',
+    brand: 'Garnier',
+    category: 'mask',
+    ingredients: 'Aqua, Glycerin, Sodium Hyaluronate, Aloe Barbadensis Leaf Juice, Panthenol, Niacinamide, Allantoin, Propylene Glycol, Hydroxyethylcellulose, Phenoxyethanol, Citric Acid, Disodium EDTA, Sodium Benzoate, Potassium Sorbate',
+  },
+  {
+    name: 'Clear Improvement Active Charcoal Mask',
+    brand: 'Origins',
+    category: 'mask',
+    ingredients: 'Aqua, Kaolin, Glycerin, Charcoal Powder, Salicylic Acid, Bambusa Vulgaris Extract, Zinc PCA, Saccharomyces Ferment, Silica, Cetearyl Alcohol, Glyceryl Stearate, Phenoxyethanol, Carbomer, Sodium Hydroxide',
+  },
+  {
+    name: 'Kind to Skin Revitalising Sheet Mask',
+    brand: 'Simple',
+    category: 'mask',
+    ingredients: 'Aqua, Glycerin, Niacinamide, Panthenol, Allantoin, Tocopheryl Acetate, Bisabolol, Sodium Hyaluronate, Propylene Glycol, Hydroxyethylcellulose, Citric Acid, Phenoxyethanol',
+  },
+
   // ── Kiehl's ──
   {
     name: 'Ultra Facial Cream',

@@ -58,9 +58,21 @@ export async function pullProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('user_products')
     .select('*')
+    .is('deleted_at', null)
     .order('created_at', { ascending: true });
   if (error) throw error;
   return (data ?? []).map(rowToProduct);
+}
+
+/** IDs of products soft-deleted on the server, so other devices can drop them locally. */
+export async function pullDeletedProductIds(): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('user_products')
+    .select('id')
+    .not('deleted_at', 'is', null);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.id as string);
 }
 
 export async function pushProducts(products: Product[]): Promise<void> {
@@ -76,7 +88,7 @@ export async function deleteRemoteProduct(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase
     .from('user_products')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }
@@ -86,9 +98,21 @@ export async function pullEntries(): Promise<RoutineEntry[]> {
   const { data, error } = await supabase
     .from('user_entries')
     .select('*')
+    .is('deleted_at', null)
     .order('date', { ascending: true });
   if (error) throw error;
   return (data ?? []).map(rowToEntry);
+}
+
+/** IDs of entries soft-deleted on the server, so other devices can drop them locally. */
+export async function pullDeletedEntryIds(): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('user_entries')
+    .select('id')
+    .not('deleted_at', 'is', null);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.id as string);
 }
 
 export async function pushEntries(entries: RoutineEntry[]): Promise<void> {
@@ -104,7 +128,7 @@ export async function deleteRemoteEntry(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase
     .from('user_entries')
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq('id', id);
   if (error) throw error;
 }

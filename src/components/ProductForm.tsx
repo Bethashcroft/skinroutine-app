@@ -12,6 +12,7 @@ const BUILT_IN_CATEGORIES: { value: ProductCategory; label: string }[] = [
   { value: 'moisturiser', label: 'Moisturiser' },
   { value: 'spf', label: 'SPF' },
   { value: 'treatment', label: 'Treatment' },
+  { value: 'mask', label: 'Face Mask' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -35,12 +36,13 @@ interface Props {
   }) => void;
   onCancel: () => void;
   initial?: Product;
+  ownedKeys?: Set<string>;
 }
 
 const isMobile = typeof window !== 'undefined' &&
   window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
-export default function ProductForm({ onSubmit, onCancel, initial }: Props) {
+export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: Props) {
   const isEditing = !!initial;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -281,11 +283,19 @@ export default function ProductForm({ onSubmit, onCancel, initial }: Props) {
                             )}
                           </span>
                         </div>
-                        <span className="shrink-0 rounded-full bg-white/40 dark:bg-white/8 backdrop-blur
-                                         px-2 py-0.5 text-[10px] font-bold text-sand-600 dark:text-sand-400
-                                         border border-white/20 dark:border-white/8">
-                          {getCategoryLabel(product.category)}
-                        </span>
+                        {ownedKeys?.has(`${product.name.toLowerCase()}|${product.brand.toLowerCase()}`) ? (
+                          <span className="shrink-0 rounded-full bg-emerald-500/15 dark:bg-emerald-500/10
+                                           px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400
+                                           border border-emerald-400/20 dark:border-emerald-500/15">
+                            In library
+                          </span>
+                        ) : (
+                          <span className="shrink-0 rounded-full bg-white/40 dark:bg-white/8 backdrop-blur
+                                           px-2 py-0.5 text-[10px] font-bold text-sand-600 dark:text-sand-400
+                                           border border-white/20 dark:border-white/8">
+                            {getCategoryLabel(product.category)}
+                          </span>
+                        )}
                       </button>
                     </li>
                   ))}

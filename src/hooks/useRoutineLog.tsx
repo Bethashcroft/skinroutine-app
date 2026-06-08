@@ -12,7 +12,7 @@ import { nanoid } from 'nanoid';
 import type { RoutineEntry, SkinRating } from '../types';
 import { useLocalStorage } from './useLocalStorage';
 import { useAuth } from './useAuth';
-import { pushEntries, pullEntries, deleteRemoteEntry } from '../lib/sync';
+import { pushEntries, pullEntries, pullDeletedEntryIds, deleteRemoteEntry } from '../lib/sync';
 import { dbGet, dbSet } from '../lib/db';
 import { entriesKey, LEGACY_ENTRIES_KEY } from '../lib/storage-keys';
 
@@ -65,16 +65,19 @@ function useRoutineLogState(): RoutineLogContextValue {
     if (!user || !isReady || hasSynced.current) return;
     hasSynced.current = true;
 
-    pullEntries()
-      .then((remote) => {
+    Promise.all([pullEntries(), pullDeletedEntryIds()])
+      .then(([remote, deletedIds]) => {
+        const deletedSet = new Set(deletedIds);
         setEntries((local) => {
-          const localIds = new Set(local.map((e) => e.id));
+          // Drop anything deleted on another device before merging.
+          const survivingLocal = local.filter((e) => !deletedSet.has(e.id));
+          const localIds = new Set(survivingLocal.map((e) => e.id));
           const remoteIds = new Set(remote.map((e) => e.id));
-          const merged = [...local];
+          const merged = [...survivingLocal];
           for (const re of remote) {
             if (!localIds.has(re.id)) merged.push(re);
           }
-          const localOnly = local.filter((e) => !remoteIds.has(e.id));
+          const localOnly = survivingLocal.filter((e) => !remoteIds.has(e.id));
           if (localOnly.length > 0) {
             pushEntries(localOnly).catch(() => {});
           }

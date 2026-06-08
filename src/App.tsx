@@ -1,20 +1,36 @@
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './hooks/useTheme';
 import { AuthProvider, useAuth, isSupabaseConfigured } from './hooks/useAuth';
-import Dashboard from './pages/Dashboard';
-import ProductLibrary from './pages/ProductLibrary';
-import RoutineLog from './pages/RoutineLog';
-import Settings from './pages/Settings';
-import Resources from './pages/Resources';
-import SharedProduct from './pages/SharedProduct';
+// Landing & Auth stay eager — they're the unauthenticated entry points.
 import Auth from './pages/Auth';
 import Landing from './pages/Landing';
-import Onboarding from './pages/Onboarding';
+// Heavier / authenticated-only pages are split into their own chunks.
+// Dashboard in particular pulls in recharts, which we don't want on first paint.
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const ProductLibrary = lazy(() => import('./pages/ProductLibrary'));
+const RoutineLog = lazy(() => import('./pages/RoutineLog'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Resources = lazy(() => import('./pages/Resources'));
+const SharedProduct = lazy(() => import('./pages/SharedProduct'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
+const Privacy = lazy(() => import('./pages/Privacy'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 import { ProductsProvider, useProducts } from './hooks/useProducts';
+import { usePaoNotifications } from './hooks/usePaoNotifications';
 import { RoutineLogProvider } from './hooks/useRoutineLog';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { SkinProfileProvider, useSkinProfile } from './hooks/useSkinProfile';
+
+// Lightweight fallback shown while a lazily-loaded page chunk is fetched.
+function PageFallback() {
+  return (
+    <div className="flex flex-1 items-center justify-center py-20">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-sand-300/40 border-t-sand-500" />
+    </div>
+  );
+}
 
 const navItems = [
   { to: '/', label: 'Home', icon: '🏠' },
@@ -56,7 +72,7 @@ function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        title={user.email ?? 'Account'}
+
         className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300
                    bg-sand-500/20 backdrop-blur-lg border border-sand-400/30 text-sand-700 shadow-sm
                    hover:bg-sand-500/30 hover:shadow-md hover:scale-105
@@ -113,8 +129,22 @@ function UserMenu() {
 
 function AppShell() {
   const { theme, toggle } = useTheme();
-  const { user, loading } = useAuth();
-  const { addProduct, initialSyncDone, isNewUser, clearIsNewUser } = useProducts();
+  const { user, loading, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { products, addProduct, initialSyncDone, isNewUser, clearIsNewUser } = useProducts();
+
+  const ownedKeys = useMemo(
+    () => new Set(products.map((p) => `${p.name.toLowerCase()}|${p.brand.toLowerCase()}`)),
+    [products],
+  );
+
+  usePaoNotifications(products);
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  }, []);
   const { profile, setProfile } = useSkinProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const retakeQuiz = searchParams.get('retake') === 'quiz';
@@ -162,11 +192,14 @@ function AppShell() {
           }}
         />
         <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col relative z-10">
-          <Routes>
-            <Route path="/share" element={<SharedProduct />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="*" element={<Landing />} />
-          </Routes>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/share" element={<SharedProduct />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="*" element={<Landing />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
     );
@@ -186,15 +219,19 @@ function AppShell() {
           }}
         />
         <main className="relative z-10">
-          <Onboarding
-            onComplete={async (p) => {
-              await setProfile(p);
-              setOnboarded(true);
-              clearIsNewUser();
-              if (retakeQuiz) setSearchParams({});
-            }}
-            addProduct={addProduct}
-          />
+          <Suspense fallback={<PageFallback />}>
+            <Onboarding
+              onComplete={async (p) => {
+                await setProfile(p);
+                setOnboarded(true);
+                clearIsNewUser();
+                if (retakeQuiz) setSearchParams({});
+              }}
+              addProduct={addProduct}
+              initialProfile={retakeQuiz ? profile : null}
+              ownedKeys={ownedKeys}
+            />
+          </Suspense>
         </main>
       </div>
     );
@@ -225,6 +262,23 @@ function AppShell() {
 
           <div className="flex items-center gap-2">
             <UserMenu />
+
+            {user && (
+              <button
+                type="button"
+                onClick={async () => { await signOut(); navigate('/'); }}
+                title="Sign out"
+                className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300
+                           bg-white/25 backdrop-blur-lg border border-white/35 text-sand-600 shadow-sm
+                           hover:bg-white/45 hover:shadow-md hover:scale-105
+                           dark:bg-white/8 dark:border-white/12 dark:text-sand-400
+                           dark:hover:bg-white/15"
+              >
+                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
+            )}
 
             <button
               type="button"
@@ -271,15 +325,19 @@ function AppShell() {
       </header>
 
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 sm:px-5 py-6 sm:py-8 pb-24 sm:pb-8 relative z-10">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/products" element={<ProductLibrary />} />
-          <Route path="/log" element={<RoutineLog />} />
-          <Route path="/resources" element={<Resources />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/share" element={<SharedProduct />} />
-          <Route path="/auth" element={<Navigate to="/" replace />} />
-        </Routes>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/products" element={<ProductLibrary />} />
+            <Route path="/log" element={<RoutineLog />} />
+            <Route path="/resources" element={<Resources />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/share" element={<SharedProduct />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/auth" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <footer className="hidden sm:block py-6 text-center text-xs text-sand-500/40 dark:text-sand-700/40 tracking-wide relative z-10">
@@ -313,16 +371,18 @@ function AppShell() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <SkinProfileProvider>
-          <ProductsProvider>
-            <RoutineLogProvider>
-              <AppShell />
-            </RoutineLogProvider>
-          </ProductsProvider>
-        </SkinProfileProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <SkinProfileProvider>
+            <ProductsProvider>
+              <RoutineLogProvider>
+                <AppShell />
+              </RoutineLogProvider>
+            </ProductsProvider>
+          </SkinProfileProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }

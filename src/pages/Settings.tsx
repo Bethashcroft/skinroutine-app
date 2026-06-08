@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dbGetAll, dbSet, dbClear } from '../lib/db';
 import { useAuth, isSupabaseConfigured } from '../hooks/useAuth';
@@ -8,12 +8,12 @@ import { useSkinProfile } from '../hooks/useSkinProfile';
 import { SKIN_TYPES, CONCERNS } from '../data/skin-recommendations';
 import { pushProducts, pushEntries, pushProfile } from '../lib/sync';
 import SyncFailedModal from '../components/SyncFailedModal';
-import type { SkinType, Concern } from '../types';
+import SkinProfileEditor from '../components/SkinProfileEditor';
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const { products } = useProducts();
   const { entries } = useRoutineLog();
   const { profile, setProfile } = useSkinProfile();
@@ -82,26 +82,38 @@ export default function Settings() {
   }
 
   const [editingProfile, setEditingProfile] = useState(false);
-  const [draftSkinType, setDraftSkinType] = useState<SkinType>(profile?.skinType ?? 'normal');
-  const [draftConcerns, setDraftConcerns] = useState<Concern[]>(profile?.concerns ?? []);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+    if (typeof Notification === 'undefined') return 'unsupported';
+    return Notification.permission;
+  });
 
-  function startEditProfile() {
-    setDraftSkinType(profile?.skinType ?? 'normal');
-    setDraftConcerns(profile?.concerns ?? []);
-    setEditingProfile(true);
+  useEffect(() => {
+    if (typeof Notification === 'undefined') return;
+    setNotifPermission(Notification.permission);
+  }, []);
+
+  async function requestNotifications() {
+    if (typeof Notification === 'undefined') return;
+    const result = await Notification.requestPermission();
+    setNotifPermission(result);
   }
 
-  async function saveProfile() {
-    await setProfile({ skinType: draftSkinType, concerns: draftConcerns });
-    setEditingProfile(false);
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError('');
+    const err = await deleteAccount();
+    if (err) {
+      setDeleteError(err);
+      setDeleting(false);
+    } else {
+      navigate('/');
+    }
   }
 
-  function toggleDraftConcern(c: Concern) {
-    setDraftConcerns((prev) =>
-      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -132,6 +144,45 @@ export default function Settings() {
                   className="btn-ghost w-full sm:w-auto text-red-500! dark:text-red-400!">
                   Sign out
                 </button>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
+                <div>
+                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Delete account</h3>
+                  <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                    Permanently removes your account and all associated data
+                  </p>
+                </div>
+                {confirmDelete ? (
+                  <div className="flex flex-col gap-2 sm:items-end">
+                    {deleteError && (
+                      <p className="text-xs text-red-500 dark:text-red-400">{deleteError}</p>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-red-500 dark:text-red-400">This cannot be undone!</span>
+                      <button
+                        type="button"
+                        onClick={handleDeleteAccount}
+                        disabled={deleting}
+                        className="rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {deleting ? 'Deleting…' : 'Confirm'}
+                      </button>
+                      <button type="button" onClick={() => { setConfirmDelete(false); setDeleteError(''); }} className="btn-ghost px-4! py-2.5!">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(true)}
+                    className="w-full sm:w-auto rounded-xl bg-white/20 backdrop-blur border border-red-300/30
+                               dark:border-red-500/20 px-5 py-2.5 text-sm font-semibold text-red-500 dark:text-red-400
+                               transition-all hover:bg-red-50/50 dark:hover:bg-red-950/20"
+                  >
+                    Delete account
+                  </button>
+                )}
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
                 <div>
@@ -172,6 +223,40 @@ export default function Settings() {
         </div>
       )}
 
+      {/* Notifications */}
+      {notifPermission !== 'unsupported' && (
+        <div className="card-solid noise overflow-hidden divide-y divide-white/15 dark:divide-white/8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Product expiry alerts</h3>
+              <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+                {notifPermission === 'granted'
+                  ? 'Notifications enabled — you\'ll be alerted at 30, 7, and 1 day before a product expires'
+                  : notifPermission === 'denied'
+                    ? 'Notifications blocked — enable them in your browser settings'
+                    : 'Get notified when products are about to expire (30, 7, and 1 day warnings)'}
+              </p>
+            </div>
+            {notifPermission === 'default' && (
+              <button type="button" onClick={requestNotifications} className="btn-primary w-full sm:w-auto">
+                Enable
+              </button>
+            )}
+            {notifPermission === 'granted' && (
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                Enabled
+              </span>
+            )}
+            {notifPermission === 'denied' && (
+              <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Blocked in browser</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Skin profile */}
       <div className="card-solid noise overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/15 dark:border-white/8">
@@ -191,7 +276,7 @@ export default function Settings() {
                 >
                   Retake quiz
                 </button>
-                <button type="button" onClick={startEditProfile}
+                <button type="button" onClick={() => setEditingProfile(true)}
                   className="btn-ghost px-3! py-1.5! text-xs! rounded-lg!">
                   Edit
                 </button>
@@ -201,63 +286,16 @@ export default function Settings() {
         </div>
 
         {editingProfile ? (
-          <div className="px-5 py-4 space-y-4">
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Skin type</p>
-              <div className="flex flex-wrap gap-1.5">
-                {SKIN_TYPES.map((t) => {
-                  const active = draftSkinType === t.value;
-                  return (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => setDraftSkinType(t.value)}
-                      className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all border
-                        ${active
-                          ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
-                          : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
-                        }`}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
-                Concerns
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {CONCERNS.map((c) => {
-                  const active = draftConcerns.includes(c.value);
-                  return (
-                    <button
-                      key={c.value}
-                      type="button"
-                      onClick={() => toggleDraftConcern(c.value)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all border
-                        ${active
-                          ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
-                          : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
-                        }`}
-                    >
-                      {c.icon} {c.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex gap-2 pt-1 justify-end">
-              <button type="button" onClick={saveProfile}
-                className="btn-primary px-4! py-1.5! text-xs!">
-                Save
-              </button>
-              <button type="button" onClick={() => setEditingProfile(false)}
-                className="btn-ghost px-4! py-1.5! text-xs!">
-                Cancel
-              </button>
-            </div>
+          <div className="px-5 py-4">
+            <SkinProfileEditor
+              initialSkinType={profile?.skinType ?? 'normal'}
+              initialConcerns={profile?.concerns ?? []}
+              onSave={async (p) => {
+                await setProfile(p);
+                setEditingProfile(false);
+              }}
+              onCancel={() => setEditingProfile(false)}
+            />
           </div>
         ) : profile ? (
           <div className="px-5 py-4 flex flex-wrap items-center gap-2">
@@ -280,7 +318,7 @@ export default function Settings() {
           </div>
         ) : (
           <div className="px-5 py-4">
-            <button type="button" onClick={startEditProfile} className="btn-primary w-full sm:w-auto">
+            <button type="button" onClick={() => setEditingProfile(true)} className="btn-primary w-full sm:w-auto">
               Set up profile
             </button>
           </div>

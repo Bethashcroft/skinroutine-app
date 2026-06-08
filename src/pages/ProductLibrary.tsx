@@ -11,6 +11,7 @@ import ProductCard from '../components/ProductCard';
 import IngredientAnalysis from '../components/IngredientAnalysis';
 import { detectLibraryConflicts } from '../data/conflicts';
 import LibraryConflictPanel from '../components/LibraryConflictPanel';
+import Toast from '../components/Toast';
 
 type ViewMode = { kind: 'list' } | { kind: 'add'; key: number } | { kind: 'edit'; product: Product };
 type SortOption = 'name' | 'recent' | 'most-used' | 'expiring';
@@ -31,6 +32,13 @@ export default function ProductLibrary() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [flagSuggestion, setFlagSuggestion] = useState<FlagSuggestion | null>(null);
+  const [duplicateProduct, setDuplicateProduct] = useState<string | null>(null);
+  const [successProduct, setSuccessProduct] = useState<string | null>(null);
+
+  const ownedKeys = useMemo(
+    () => new Set(products.map((p) => `${p.name.toLowerCase()}|${p.brand.toLowerCase()}`)),
+    [products],
+  );
 
   const libraryConflicts = useMemo(() => detectLibraryConflicts(products), [products]);
 
@@ -89,7 +97,16 @@ export default function ProductLibrary() {
   }, []);
 
   function handleAdd(input: ProductInput) {
+    const duplicate = products.find(
+      (p) => p.name.toLowerCase() === input.name.toLowerCase() &&
+             p.brand.toLowerCase() === input.brand.toLowerCase(),
+    );
+    if (duplicate) {
+      setDuplicateProduct(duplicate.name);
+      return;
+    }
     const product = addProduct(input);
+    setSuccessProduct(input.name);
     setView({ kind: 'list' });
     runPostAddCheck(product);
   }
@@ -130,8 +147,16 @@ export default function ProductLibrary() {
           <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">Search for a product or add one manually</p>
         </div>
         <div className="card-solid noise p-5 sm:p-6">
-          <ProductForm key={view.key} onSubmit={handleAdd} onCancel={() => setView({ kind: 'list' })} />
+          <ProductForm key={view.key} onSubmit={handleAdd} onCancel={() => setView({ kind: 'list' })} ownedKeys={ownedKeys} />
         </div>
+        {duplicateProduct && (
+          <Toast
+            variant="warning"
+            title="Already in your library"
+            message={<><strong className="text-gray-700 dark:text-gray-300">{duplicateProduct}</strong> has already been added. Try entering another or edit it in your library.</>}
+            onClose={() => setDuplicateProduct(null)}
+          />
+        )}
       </div>
     );
   }
@@ -280,6 +305,15 @@ export default function ProductLibrary() {
 
       {filtered.length === 0 && products.length > 0 && (
         <p className="py-10 text-center text-sm text-gray-400 dark:text-gray-500">No products match "{search}"</p>
+      )}
+
+      {successProduct && (
+        <Toast
+          variant="success"
+          title="Product added"
+          message={<><strong className="text-gray-700 dark:text-gray-300">{successProduct}</strong> has been added to your library.</>}
+          onClose={() => setSuccessProduct(null)}
+        />
       )}
 
       <div className="space-y-3">
