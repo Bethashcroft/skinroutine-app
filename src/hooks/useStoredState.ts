@@ -14,7 +14,7 @@ function ensureMigration(): Promise<void> {
   return migrationPromise;
 }
 
-export function useLocalStorage<T>(key: string, initialValue: T) {
+export function useStoredState<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isReady, setIsReady] = useState(false);
   const loaded = useRef(false);

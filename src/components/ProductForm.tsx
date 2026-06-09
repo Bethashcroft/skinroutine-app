@@ -3,6 +3,7 @@ import type { Product, ProductCategory, IngredientFlag } from '../types';
 import { flagOptionsToFlags, flagsToOptionKeys } from '../data/ingredient-flags';
 import { searchProducts, detectFlagsFromIngredients, type SearchResult } from '../data/product-search';
 import { dbGet, dbSet } from '../lib/db';
+import { useClickOutside } from '../hooks/useClickOutside';
 import FlagPicker from './FlagPicker';
 
 const BUILT_IN_CATEGORIES: { value: ProductCategory; label: string }[] = [
@@ -101,15 +102,7 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowResults(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  useClickOutside(wrapperRef, () => setShowResults(false));
 
   const performSearch = useCallback(async (query: string) => {
     if (query.length < 2) {

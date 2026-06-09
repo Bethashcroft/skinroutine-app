@@ -1,14 +1,14 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dbGetAll, dbSet, dbClear } from '../lib/db';
 import { useAuth, isSupabaseConfigured } from '../hooks/useAuth';
 import { useProducts } from '../hooks/useProducts';
 import { useRoutineLog } from '../hooks/useRoutineLog';
 import { useSkinProfile } from '../hooks/useSkinProfile';
-import { SKIN_TYPES, CONCERNS } from '../data/skin-recommendations';
 import { pushProducts, pushEntries, pushProfile } from '../lib/sync';
 import SyncFailedModal from '../components/SyncFailedModal';
 import SkinProfileEditor from '../components/SkinProfileEditor';
+import SkinProfileChips from '../components/SkinProfileChips';
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -90,11 +90,6 @@ export default function Settings() {
     if (typeof Notification === 'undefined') return 'unsupported';
     return Notification.permission;
   });
-
-  useEffect(() => {
-    if (typeof Notification === 'undefined') return;
-    setNotifPermission(Notification.permission);
-  }, []);
 
   async function requestNotifications() {
     if (typeof Notification === 'undefined') return;
@@ -298,24 +293,7 @@ export default function Settings() {
             />
           </div>
         ) : profile ? (
-          <div className="px-5 py-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-sand-500/15 dark:bg-sand-400/10 border border-sand-400/25 dark:border-sand-500/15
-                             px-3 py-1 text-xs font-bold text-sand-700 dark:text-sand-300">
-              {SKIN_TYPES.find((t) => t.value === profile.skinType)?.label ?? profile.skinType} skin
-            </span>
-            {profile.concerns.map((c) => {
-              const meta = CONCERNS.find((x) => x.value === c);
-              return (
-                <span key={c} className="rounded-full bg-white/35 dark:bg-white/8 border border-white/25 dark:border-white/10
-                                         px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                  {meta?.icon} {meta?.label ?? c}
-                </span>
-              );
-            })}
-            {profile.concerns.length === 0 && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">No concerns selected</span>
-            )}
-          </div>
+          <SkinProfileChips profile={profile} className="px-5 py-4" />
         ) : (
           <div className="px-5 py-4">
             <button type="button" onClick={() => setEditingProfile(true)} className="btn-primary w-full sm:w-auto">

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from 'react';
 import type { SkinProfile } from '../types';
-import { useLocalStorage } from './useLocalStorage';
+import { useStoredState } from './useStoredState';
 import { useAuth } from './useAuth';
 import { dbSet } from '../lib/db';
 import { pullProfile, pushProfile } from '../lib/sync';
@@ -15,7 +15,7 @@ const SkinProfileContext = createContext<SkinProfileContextValue | null>(null);
 function useSkinProfileState(): SkinProfileContextValue {
   const { user } = useAuth();
   const key = user ? `skinroutine:profile:${user.id}` : 'skinroutine:profile';
-  const [profile, setRaw, isReady] = useLocalStorage<SkinProfile | null>(key, null);
+  const [profile, setRaw, isReady] = useStoredState<SkinProfile | null>(key, null);
   const hasSynced = useRef(false);
 
   useEffect(() => {

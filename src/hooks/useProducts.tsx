@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { nanoid } from 'nanoid';
 import type { Product, ProductCategory, IngredientFlag } from '../types';
-import { useLocalStorage } from './useLocalStorage';
+import { useStoredState } from './useStoredState';
 import { useAuth } from './useAuth';
 import { addToUserCatalog } from '../data/product-search';
 import { flagsToOptionKeys } from '../data/ingredient-flags';
@@ -48,7 +48,7 @@ const ProductsContext = createContext<ProductsContextValue | null>(null);
 function useProductsState(): ProductsContextValue {
   const { user } = useAuth();
   const key = productsKey(user?.id);
-  const [products, setProducts, isReady] = useLocalStorage<Product[]>(key, []);
+  const [products, setProducts, isReady] = useStoredState<Product[]>(key, []);
   const hasSynced = useRef(false);
   const migratedLegacy = useRef(false);
   const [initialSyncDone, setInitialSyncDone] = useState(!user);

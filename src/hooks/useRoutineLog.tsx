@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { nanoid } from 'nanoid';
 import type { RoutineEntry, SkinRating } from '../types';
-import { useLocalStorage } from './useLocalStorage';
+import { useStoredState } from './useStoredState';
 import { useAuth } from './useAuth';
 import { pushEntries, pullEntries, pullDeletedEntryIds, deleteRemoteEntry } from '../lib/sync';
 import { dbGet, dbSet } from '../lib/db';
@@ -41,7 +41,7 @@ const RoutineLogContext = createContext<RoutineLogContextValue | null>(null);
 function useRoutineLogState(): RoutineLogContextValue {
   const { user } = useAuth();
   const key = entriesKey(user?.id);
-  const [entries, setEntries, isReady] = useLocalStorage<RoutineEntry[]>(key, []);
+  const [entries, setEntries, isReady] = useStoredState<RoutineEntry[]>(key, []);
   const hasSynced = useRef(false);
   const migratedLegacy = useRef(false);
 

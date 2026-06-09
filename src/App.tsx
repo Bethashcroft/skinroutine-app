@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useSearch
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './hooks/useTheme';
+import { useClickOutside } from './hooks/useClickOutside';
 import { AuthProvider, useAuth, isSupabaseConfigured } from './hooks/useAuth';
 // Landing & Auth stay eager — they're the unauthenticated entry points.
 import Auth from './pages/Auth';
@@ -20,7 +21,7 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 import { ProductsProvider, useProducts } from './hooks/useProducts';
 import { usePaoNotifications } from './hooks/usePaoNotifications';
 import { RoutineLogProvider } from './hooks/useRoutineLog';
-import { useLocalStorage } from './hooks/useLocalStorage';
+import { useStoredState } from './hooks/useStoredState';
 import { SkinProfileProvider, useSkinProfile } from './hooks/useSkinProfile';
 
 // Lightweight fallback shown while a lazily-loaded page chunk is fetched.
@@ -46,16 +47,7 @@ function UserMenu() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const close = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', close);
-    return () => document.removeEventListener('mousedown', close);
-  }, [open]);
+  useClickOutside(menuRef, () => setOpen(false), open);
 
   if (!user) return null;
 
@@ -149,7 +141,7 @@ function AppShell() {
   const [searchParams, setSearchParams] = useSearchParams();
   const retakeQuiz = searchParams.get('retake') === 'quiz';
   const onboardedKey = user ? `skinroutine:onboarded:${user.id}` : 'skinroutine:onboarded';
-  const [, setOnboarded] = useLocalStorage<boolean>(onboardedKey, false);
+  const [, setOnboarded] = useStoredState<boolean>(onboardedKey, false);
 
   if (isSupabaseConfigured && loading) {
     return (
