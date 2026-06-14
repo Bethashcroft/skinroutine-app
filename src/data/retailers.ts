@@ -42,7 +42,7 @@ export const RETAILERS: Retailer[] = [
     url: 'https://www.sephora.co.uk',
     description:
       'Global beauty giant now in the UK (absorbed Feelunique). Premium and indie brands with the MySephora rewards programme.',
-    tags: ['Premium', 'Indie brands', 'Rewards'],
+    tags: ['Premium', 'Trend-led', 'Rewards'],
     freeDelivery: 'Free delivery over £20',
     highlight: 'MySephora loyalty programme',
     goodFor: {
