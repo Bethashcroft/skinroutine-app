@@ -34,7 +34,11 @@ function showNotification(title: string, body: string): void {
 
 export function usePaoNotifications(products: Product[]): void {
   useEffect(() => {
-    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (
+      typeof Notification === 'undefined' ||
+      Notification.permission !== 'granted'
+    )
+      return;
 
     const productsWithPao = products.filter(
       (p) => p.openedAt && p.paoMonths && p.paoMonths > 0,
@@ -46,11 +50,17 @@ export function usePaoNotifications(products: Product[]): void {
       const days = daysUntil(expiry);
 
       for (const threshold of THRESHOLDS) {
-        if (days <= threshold && days >= 0 && !wasNotifiedToday(p.id, threshold)) {
+        if (
+          days <= threshold &&
+          days >= 0 &&
+          !wasNotifiedToday(p.id, threshold)
+        ) {
           const label =
-            threshold === 1 ? 'expires tomorrow' :
-            threshold === 7 ? 'expires in 7 days' :
-            'expires in 30 days';
+            threshold === 1
+              ? 'expires tomorrow'
+              : threshold === 7
+                ? 'expires in 7 days'
+                : 'expires in 30 days';
           showNotification(
             `${p.name} ${label}`,
             `${p.brand} · opened ${new Date(p.openedAt!).toLocaleDateString('en-GB')} · ${p.paoMonths}M PAO`,

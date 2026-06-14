@@ -30,9 +30,15 @@ export default function SkinRatingPicker({ value, onChange }: Props) {
             }`}
         >
           <span className="text-xl">{r.emoji}</span>
-          <span className={`mt-1 text-[10px] font-bold ${
-            value === r.value ? 'text-sand-700 dark:text-sand-400' : 'text-gray-400 dark:text-gray-500'
-          }`}>{r.label}</span>
+          <span
+            className={`mt-1 text-[10px] font-bold ${
+              value === r.value
+                ? 'text-sand-700 dark:text-sand-400'
+                : 'text-gray-400 dark:text-gray-500'
+            }`}
+          >
+            {r.label}
+          </span>
         </button>
       ))}
     </div>

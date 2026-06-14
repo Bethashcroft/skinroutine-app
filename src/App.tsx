@@ -1,4 +1,12 @@
-import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  NavLink,
+  Navigate,
+  useNavigate,
+  useSearchParams,
+} from 'react-router-dom';
 import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './hooks/useTheme';
@@ -33,6 +41,19 @@ function PageFallback() {
   );
 }
 
+function BackdropGlow() {
+  return (
+    <div
+      className="fixed top-1/3 left-1/3 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
+      style={{
+        background:
+          'radial-gradient(circle, rgba(237, 202, 158, 0.4) 0%, rgba(244, 219, 193, 0.2) 40%, transparent 70%)',
+        filter: 'blur(80px)',
+      }}
+    />
+  );
+}
+
 const navItems = [
   { to: '/', label: 'Home', icon: '🏠' },
   { to: '/products', label: 'Products', icon: '🧴' },
@@ -51,7 +72,11 @@ function UserMenu() {
 
   if (!user) return null;
 
-  const initial = (user.user_metadata?.full_name?.[0] || user.email?.[0] || '?').toUpperCase();
+  const initial = (
+    user.user_metadata?.full_name?.[0] ||
+    user.email?.[0] ||
+    '?'
+  ).toUpperCase();
 
   async function handleSignOut() {
     setOpen(false);
@@ -64,7 +89,6 @@ function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-
         className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300
                    bg-sand-500/20 backdrop-blur-lg border border-sand-400/30 text-sand-700 shadow-sm
                    hover:bg-sand-500/30 hover:shadow-md hover:scale-105
@@ -75,9 +99,11 @@ function UserMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden
+        <div
+          className="absolute right-0 top-full mt-2 w-52 rounded-2xl overflow-hidden
                         bg-white/80 backdrop-blur-xl border border-white/50 shadow-xl
-                        dark:bg-gray-900/85 dark:border-white/10 dark:shadow-black/40 z-50">
+                        dark:bg-gray-900/85 dark:border-white/10 dark:shadow-black/40 z-50"
+        >
           <div className="px-4 py-3 border-b border-gray-200/40 dark:border-white/8">
             <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">
               {user.user_metadata?.full_name || 'Account'}
@@ -89,14 +115,31 @@ function UserMenu() {
           <div className="p-1.5">
             <button
               type="button"
-              onClick={() => { navigate('/settings'); setOpen(false); }}
+              onClick={() => {
+                navigate('/settings');
+                setOpen(false);
+              }}
               className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium
                          text-gray-600 dark:text-gray-300
                          hover:bg-gray-100/60 dark:hover:bg-white/8 transition-colors"
             >
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                className="h-4 w-4 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               Settings
             </button>
@@ -107,8 +150,18 @@ function UserMenu() {
                          text-red-500 dark:text-red-400
                          hover:bg-red-50/60 dark:hover:bg-red-950/20 transition-colors"
             >
-              <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              <svg
+                className="h-4 w-4 shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+                />
               </svg>
               Sign out
             </button>
@@ -123,10 +176,14 @@ function AppShell() {
   const { theme, toggle } = useTheme();
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { products, addProduct, initialSyncDone, isNewUser, clearIsNewUser } = useProducts();
+  const { products, addProduct, initialSyncDone, isNewUser, clearIsNewUser } =
+    useProducts();
 
   const ownedKeys = useMemo(
-    () => new Set(products.map((p) => `${p.name.toLowerCase()}|${p.brand.toLowerCase()}`)),
+    () =>
+      new Set(
+        products.map((p) => `${p.name.toLowerCase()}|${p.brand.toLowerCase()}`),
+      ),
     [products],
   );
 
@@ -140,7 +197,9 @@ function AppShell() {
   const { profile, setProfile } = useSkinProfile();
   const [searchParams, setSearchParams] = useSearchParams();
   const retakeQuiz = searchParams.get('retake') === 'quiz';
-  const onboardedKey = user ? `skinroutine:onboarded:${user.id}` : 'skinroutine:onboarded';
+  const onboardedKey = user
+    ? `skinroutine:onboarded:${user.id}`
+    : 'skinroutine:onboarded';
   const [, setOnboarded] = useStoredState<boolean>(onboardedKey, false);
 
   if (isSupabaseConfigured && loading) {
@@ -177,12 +236,7 @@ function AppShell() {
   if (isSupabaseConfigured && !user) {
     return (
       <div className="flex min-h-svh flex-col">
-        <div className="fixed top-1/3 left-1/3 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
-          style={{
-            background: 'radial-gradient(circle, rgba(237, 202, 158, 0.4) 0%, rgba(244, 219, 193, 0.2) 40%, transparent 70%)',
-            filter: 'blur(80px)',
-          }}
-        />
+        <BackdropGlow />
         <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col relative z-10">
           <Suspense fallback={<PageFallback />}>
             <Routes>
@@ -197,19 +251,16 @@ function AppShell() {
     );
   }
 
-  const showOnboarding = isSupabaseConfigured && user && initialSyncDone && (
-    retakeQuiz || (isNewUser && !profile)
-  );
+  const showOnboarding =
+    isSupabaseConfigured &&
+    user &&
+    initialSyncDone &&
+    (retakeQuiz || (isNewUser && !profile));
 
   if (showOnboarding) {
     return (
       <div className="flex min-h-svh flex-col">
-        <div className="fixed top-1/3 left-1/3 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
-          style={{
-            background: 'radial-gradient(circle, rgba(237, 202, 158, 0.4) 0%, rgba(244, 219, 193, 0.2) 40%, transparent 70%)',
-            filter: 'blur(80px)',
-          }}
-        />
+        <BackdropGlow />
         <main className="relative z-10">
           <Suspense fallback={<PageFallback />}>
             <Onboarding
@@ -231,21 +282,24 @@ function AppShell() {
 
   return (
     <div className="flex min-h-svh flex-col">
-      <div className="fixed top-1/3 left-1/3 w-[500px] h-[500px] rounded-full pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(circle, rgba(237, 202, 158, 0.4) 0%, rgba(244, 219, 193, 0.2) 40%, transparent 70%)',
-          filter: 'blur(80px)',
-        }}
-      />
+      <BackdropGlow />
 
-      <header className="sticky top-0 z-30 backdrop-blur-2xl
+      <header
+        className="sticky top-0 z-30 backdrop-blur-2xl
                          bg-white/35 border-b border-white/30 shadow-sm
-                         dark:bg-white/5 dark:border-white/10 dark:shadow-none">
+                         dark:bg-white/5 dark:border-white/10 dark:shadow-none"
+      >
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 sm:px-5 py-3">
           <NavLink to="/" className="flex items-center gap-2.5 group">
-            <div className="h-9 w-9 rounded-xl overflow-hidden shadow-md ring-1 ring-white/40
-                            group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
-              <img src="/logo.png" alt="" className="h-full w-full object-cover" />
+            <div
+              className="h-9 w-9 rounded-xl overflow-hidden shadow-md ring-1 ring-white/40
+                            group-hover:shadow-lg group-hover:scale-105 transition-all duration-300"
+            >
+              <img
+                src="/logo.png"
+                alt=""
+                className="h-full w-full object-cover"
+              />
             </div>
             <span className="text-lg font-bold tracking-tight text-sand-800 dark:text-sand-200">
               SkinRoutine
@@ -258,7 +312,10 @@ function AppShell() {
             {user && (
               <button
                 type="button"
-                onClick={async () => { await signOut(); navigate('/'); }}
+                onClick={async () => {
+                  await signOut();
+                  navigate('/');
+                }}
                 title="Sign out"
                 className="flex h-9 w-9 items-center justify-center rounded-full transition-all duration-300
                            bg-white/25 backdrop-blur-lg border border-white/35 text-sand-600 shadow-sm
@@ -266,8 +323,18 @@ function AppShell() {
                            dark:bg-white/8 dark:border-white/12 dark:text-sand-400
                            dark:hover:bg-white/15"
               >
-                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                <svg
+                  className="h-4.5 w-4.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
                 </svg>
               </button>
             )}
@@ -283,18 +350,40 @@ function AppShell() {
                          dark:hover:bg-white/15"
             >
               {theme === 'dark' ? (
-                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                <svg
+                  className="h-4.5 w-4.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
                 </svg>
               ) : (
-                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                <svg
+                  className="h-4.5 w-4.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+                  />
                 </svg>
               )}
             </button>
 
-            <nav className="hidden sm:flex gap-1 rounded-2xl bg-white/20 backdrop-blur-xl p-1 border border-white/30 shadow-sm
-                            dark:bg-white/5 dark:border-white/8 dark:shadow-none">
+            <nav
+              className="hidden sm:flex gap-1 rounded-2xl bg-white/20 backdrop-blur-xl p-1 border border-white/30 shadow-sm
+                            dark:bg-white/5 dark:border-white/8 dark:shadow-none"
+            >
               {navItems.map(({ to, label }) => (
                 <NavLink
                   key={to}
@@ -336,9 +425,11 @@ function AppShell() {
         SkinRoutine &middot; Your skincare diary
       </footer>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 flex sm:hidden
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-30 flex sm:hidden
                       border-t border-white/25 bg-white/35 backdrop-blur-2xl shadow-[0_-2px_15px_rgba(0,0,0,0.05)] safe-bottom
-                      dark:border-white/8 dark:bg-white/5 dark:shadow-none">
+                      dark:border-white/8 dark:bg-white/5 dark:shadow-none"
+      >
         {navItems.map(({ to, label, icon }) => (
           <NavLink
             key={to}

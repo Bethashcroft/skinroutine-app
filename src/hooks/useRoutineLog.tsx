@@ -12,7 +12,12 @@ import { nanoid } from 'nanoid';
 import type { RoutineEntry, SkinRating } from '../types';
 import { useStoredState } from './useStoredState';
 import { useAuth } from './useAuth';
-import { pushEntries, pullEntries, pullDeletedEntryIds, deleteRemoteEntry } from '../lib/sync';
+import {
+  pushEntries,
+  pullEntries,
+  pullDeletedEntryIds,
+  deleteRemoteEntry,
+} from '../lib/sync';
 import { dbGet, dbSet } from '../lib/db';
 import { entriesKey, LEGACY_ENTRIES_KEY } from '../lib/storage-keys';
 
@@ -33,7 +38,10 @@ interface RoutineLogContextValue {
   getEntriesForDate: (date: string) => RoutineEntry[];
   getStreak: () => number;
   getLast7DaysRatings: () => { date: string; avg: number }[];
-  getProductStats: (productId: string) => { timesUsed: number; lastUsed: string | null };
+  getProductStats: (productId: string) => {
+    timesUsed: number;
+    lastUsed: string | null;
+  };
 }
 
 const RoutineLogContext = createContext<RoutineLogContextValue | null>(null);
@@ -41,7 +49,10 @@ const RoutineLogContext = createContext<RoutineLogContextValue | null>(null);
 function useRoutineLogState(): RoutineLogContextValue {
   const { user } = useAuth();
   const key = entriesKey(user?.id);
-  const [entries, setEntries, isReady] = useStoredState<RoutineEntry[]>(key, []);
+  const [entries, setEntries, isReady] = useStoredState<RoutineEntry[]>(
+    key,
+    [],
+  );
   const hasSynced = useRef(false);
   const migratedLegacy = useRef(false);
 
@@ -142,7 +153,9 @@ function useRoutineLogState(): RoutineLogContextValue {
   const getStreak = useCallback((): number => {
     if (entries.length === 0) return 0;
 
-    const uniqueDates = [...new Set(entries.map((e) => e.date))].sort().reverse();
+    const uniqueDates = [...new Set(entries.map((e) => e.date))]
+      .sort()
+      .reverse();
     const today = new Date().toISOString().slice(0, 10);
 
     if (uniqueDates[0] !== today) return 0;
@@ -151,14 +164,18 @@ function useRoutineLogState(): RoutineLogContextValue {
     for (let i = 1; i < uniqueDates.length; i++) {
       const prev = new Date(uniqueDates[i - 1]);
       const curr = new Date(uniqueDates[i]);
-      const diffDays = (prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24);
+      const diffDays =
+        (prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24);
       if (diffDays === 1) streak++;
       else break;
     }
     return streak;
   }, [entries]);
 
-  const getLast7DaysRatings = useCallback((): { date: string; avg: number }[] => {
+  const getLast7DaysRatings = useCallback((): {
+    date: string;
+    avg: number;
+  }[] => {
     const result: { date: string; avg: number }[] = [];
     const today = new Date();
 
@@ -169,7 +186,9 @@ function useRoutineLogState(): RoutineLogContextValue {
       const dayEntries = entries.filter((e) => e.date === dateStr);
 
       if (dayEntries.length > 0) {
-        const avg = dayEntries.reduce((sum, e) => sum + e.skinRating, 0) / dayEntries.length;
+        const avg =
+          dayEntries.reduce((sum, e) => sum + e.skinRating, 0) /
+          dayEntries.length;
         result.push({ date: dateStr, avg: Math.round(avg * 10) / 10 });
       } else {
         result.push({ date: dateStr, avg: 0 });
@@ -211,7 +230,11 @@ function useRoutineLogState(): RoutineLogContextValue {
 
 export function RoutineLogProvider({ children }: { children: ReactNode }) {
   const value = useRoutineLogState();
-  return <RoutineLogContext.Provider value={value}>{children}</RoutineLogContext.Provider>;
+  return (
+    <RoutineLogContext.Provider value={value}>
+      {children}
+    </RoutineLogContext.Provider>
+  );
 }
 
 export function useRoutineLog() {

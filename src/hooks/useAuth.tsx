@@ -1,8 +1,21 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  type ReactNode,
+} from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, isConfigured } from '../lib/supabase';
 import { dbDelete } from '../lib/db';
-import { productsKey, entriesKey, LEGACY_PRODUCTS_KEY, LEGACY_ENTRIES_KEY } from '../lib/storage-keys';
+import {
+  productsKey,
+  entriesKey,
+  LEGACY_PRODUCTS_KEY,
+  LEGACY_ENTRIES_KEY,
+} from '../lib/storage-keys';
 
 interface AuthState {
   user: User | null;
@@ -28,15 +41,19 @@ const AuthContext = createContext<AuthState>({
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(supabase));
+
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+    if (!supabase) return;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
       setLoading(false);
     });
@@ -52,21 +69,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const signInWithEmail = useCallback(async (email: string, password: string): Promise<string | null> => {
-    if (!supabase) return 'Supabase not configured';
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error?.message ?? null;
-  }, []);
+  const signInWithEmail = useCallback(
+    async (email: string, password: string): Promise<string | null> => {
+      if (!supabase) return 'Supabase not configured';
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return error?.message ?? null;
+    },
+    [],
+  );
 
-  const signUpWithEmail = useCallback(async (email: string, password: string): Promise<string | null> => {
-    if (!supabase) return 'Supabase not configured';
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin },
-    });
-    return error?.message ?? null;
-  }, []);
+  const signUpWithEmail = useCallback(
+    async (email: string, password: string): Promise<string | null> => {
+      if (!supabase) return 'Supabase not configured';
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      return error?.message ?? null;
+    },
+    [],
+  );
 
   const deleteAccount = useCallback(async (): Promise<string | null> => {
     if (!supabase) return 'Supabase not configured';
@@ -85,9 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
     return null;
   }, []);
-
-  const sessionRef = useRef(session);
-  sessionRef.current = session;
 
   const signOut = useCallback(async () => {
     if (!supabase) return;

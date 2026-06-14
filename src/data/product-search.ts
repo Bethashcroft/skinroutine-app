@@ -15,11 +15,11 @@ export interface SearchResult {
 // Entries are sorted longest-first at detection time to avoid partial matches.
 const INGREDIENT_TO_FLAG: Record<string, string> = {
   // ── Actives ──
-  'retinol': 'retinol',
-  'retinal': 'retinal',
-  'retinaldehyde': 'retinal',
-  'tretinoin': 'tretinoin',
-  'niacinamide': 'niacinamide',
+  retinol: 'retinol',
+  retinal: 'retinal',
+  retinaldehyde: 'retinal',
+  tretinoin: 'tretinoin',
+  niacinamide: 'niacinamide',
   'ascorbic acid': 'vitamin-c',
   'ascorbyl glucoside': 'vitamin-c',
   'ascorbyl tetraisopalmitate': 'vitamin-c',
@@ -43,37 +43,37 @@ const INGREDIENT_TO_FLAG: Record<string, string> = {
   'alpha-arbutin': 'alpha-arbutin',
   'alpha arbutin': 'alpha-arbutin',
   'benzoyl peroxide': 'benzoyl-peroxide',
-  'panthenol': 'panthenol',
+  panthenol: 'panthenol',
   'd-panthenol': 'panthenol',
   'centella asiatica extract': 'centella',
   'centella asiatica': 'centella',
-  'madecassoside': 'centella',
-  'asiaticoside': 'centella',
-  'bakuchiol': 'bakuchiol',
+  madecassoside: 'centella',
+  asiaticoside: 'centella',
+  bakuchiol: 'bakuchiol',
   'zinc oxide': 'zinc-oxide',
 
   // ── Fragrance allergens (EU 26) ──
-  'linalool': 'linalool',
-  'limonene': 'limonene',
+  linalool: 'linalool',
+  limonene: 'limonene',
   'd-limonene': 'limonene',
-  'citronellol': 'citronellol',
-  'geraniol': 'geraniol',
+  citronellol: 'citronellol',
+  geraniol: 'geraniol',
   'benzyl alcohol': 'benzyl-alcohol',
-  'coumarin': 'coumarin',
-  'eugenol': 'eugenol',
-  'citral': 'citral',
+  coumarin: 'coumarin',
+  eugenol: 'eugenol',
+  citral: 'citral',
   'hexyl cinnamal': 'hexyl-cinnamal',
   'amyl cinnamal': 'amyl-cinnamal',
-  'amylcinnamal': 'amyl-cinnamal',
-  'hydroxycitronellal': 'hydroxycitronellal',
+  amylcinnamal: 'amyl-cinnamal',
+  hydroxycitronellal: 'hydroxycitronellal',
   'benzyl benzoate': 'benzyl-benzoate',
   'benzyl cinnamate': 'benzyl-cinnamate',
   'benzyl salicylate': 'benzyl-salicylate',
   'cinnamyl alcohol': 'cinnamyl-alcohol',
-  'cinnamal': 'cinnamal',
-  'cinnamaldehyde': 'cinnamal',
-  'farnesol': 'farnesol',
-  'isoeugenol': 'isoeugenol',
+  cinnamal: 'cinnamal',
+  cinnamaldehyde: 'cinnamal',
+  farnesol: 'farnesol',
+  isoeugenol: 'isoeugenol',
   'alpha-isomethyl ionone': 'alpha-isomethyl-ionone',
   'butylphenyl methylpropional': 'alpha-isomethyl-ionone',
   'anise alcohol': 'anise-alcohol',
@@ -81,8 +81,8 @@ const INGREDIENT_TO_FLAG: Record<string, string> = {
   'evernia prunastri': 'oakmoss',
   'evernia furfuracea': 'treemoss',
   'methyl 2-octynoate': 'methyl-2-octynoate',
-  'parfum': 'fragrance',
-  'fragrance': 'fragrance',
+  parfum: 'fragrance',
+  fragrance: 'fragrance',
 
   // ── Irritants ──
   'alcohol denat': 'alcohol-denat',
@@ -90,10 +90,10 @@ const INGREDIENT_TO_FLAG: Record<string, string> = {
   'sd alcohol': 'alcohol-denat',
   'witch hazel': 'witch-hazel',
   'hamamelis virginiana': 'witch-hazel',
-  'menthol': 'menthol',
+  menthol: 'menthol',
   'mentha piperita': 'peppermint',
   'peppermint oil': 'peppermint',
-  'camphor': 'camphor',
+  camphor: 'camphor',
   'sodium lauryl sulfate': 'sls',
   'sodium laureth sulfate': 'sles',
   'essential oil': 'essential-oils',
@@ -111,7 +111,7 @@ const INGREDIENT_TO_FLAG: Record<string, string> = {
   'theobroma cacao seed butter': 'cocoa-butter',
   'isopropyl myristate': 'isopropyl-myristate',
   'isopropyl palmitate': 'isopropyl-palmitate',
-  'lanolin': 'lanolin',
+  lanolin: 'lanolin',
   'algae extract': 'algae-extract',
   'wheat germ oil': 'wheat-germ-oil',
   'triticum vulgare germ oil': 'wheat-germ-oil',
@@ -122,12 +122,20 @@ const INGREDIENT_TO_FLAG: Record<string, string> = {
 // whereas "Cetearyl Alcohol", "Benzyl Alcohol", "Cinnamyl Alcohol" and
 // "Alcohol Denat." are different ingredients and must NOT trip the plain flag.
 const TOKEN_EXACT_FLAGS: Record<string, string> = {
-  'alcohol': 'alcohol',
+  alcohol: 'alcohol',
 };
 
+export const DETECTABLE_FLAG_KEYS: string[] = [
+  ...new Set([
+    ...Object.values(INGREDIENT_TO_FLAG),
+    ...Object.values(TOKEN_EXACT_FLAGS),
+  ]),
+];
+
 // Sorted entries: longest ingredient names first to prevent partial matches
-const SORTED_ENTRIES = Object.entries(INGREDIENT_TO_FLAG)
-  .sort((a, b) => b[0].length - a[0].length);
+const SORTED_ENTRIES = Object.entries(INGREDIENT_TO_FLAG).sort(
+  (a, b) => b[0].length - a[0].length,
+);
 
 // Split an INCI string into comma-delimited tokens, tracking each token's
 // starting offset in the original string (for substring highlighting).
@@ -165,7 +173,9 @@ export function detectFlagsFromIngredients(ingredientsText: string): string[] {
   return [...found];
 }
 
-export function findFlaggedSubstrings(ingredientsText: string): { start: number; end: number; flagKey: string }[] {
+export function findFlaggedSubstrings(
+  ingredientsText: string,
+): { start: number; end: number; flagKey: string }[] {
   const lower = ingredientsText.toLowerCase();
   const matches: { start: number; end: number; flagKey: string }[] = [];
 
@@ -183,7 +193,11 @@ export function findFlaggedSubstrings(ingredientsText: string): { start: number;
     if (!flagKey) continue;
     const wordIdx = token.toLowerCase().indexOf(norm);
     if (wordIdx >= 0) {
-      matches.push({ start: start + wordIdx, end: start + wordIdx + norm.length, flagKey });
+      matches.push({
+        start: start + wordIdx,
+        end: start + wordIdx + norm.length,
+        flagKey,
+      });
     }
   }
 
@@ -193,12 +207,15 @@ export function findFlaggedSubstrings(ingredientsText: string): { start: number;
 function guessCategory(name: string, categories?: string[]): ProductCategory {
   const lower = (name + ' ' + (categories?.join(' ') ?? '')).toLowerCase();
 
-  if (/\bspf\b|sunscreen|sun cream|sun block|sun protect|uv\b/i.test(lower)) return 'spf';
+  if (/\bspf\b|sunscreen|sun cream|sun block|sun protect|uv\b/i.test(lower))
+    return 'spf';
   if (/cleanser|cleansing|wash|micellar/i.test(lower)) return 'cleanser';
   if (/toner|toning|lotion tonique/i.test(lower)) return 'toner';
   if (/serum|ampoule|essence|booster/i.test(lower)) return 'serum';
-  if (/moisturi[sz]|cream|lotion|baume|balm|hydrat/i.test(lower)) return 'moisturiser';
-  if (/mask|peel|exfoli|treatment|retinol|acne|spot/i.test(lower)) return 'treatment';
+  if (/moisturi[sz]|cream|lotion|baume|balm|hydrat/i.test(lower))
+    return 'moisturiser';
+  if (/mask|peel|exfoli|treatment|retinol|acne|spot/i.test(lower))
+    return 'treatment';
 
   return 'other';
 }
@@ -235,26 +252,32 @@ const API_BASES = [
 
 function searchBuiltIn(query: string): SearchResult[] {
   const q = query.toLowerCase();
-  return BUILT_IN_PRODUCTS
-    .filter((p) => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q))
-    .map((p) => ({
-      name: p.name,
-      brand: p.brand,
-      category: p.category,
-      flagKeys: detectFlagsFromIngredients(p.ingredients),
-      ingredients: p.ingredients,
-      source: 'builtin' as const,
-    }));
+  return BUILT_IN_PRODUCTS.filter(
+    (p) =>
+      p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q),
+  ).map((p) => ({
+    name: p.name,
+    brand: p.brand,
+    category: p.category,
+    flagKeys: detectFlagsFromIngredients(p.ingredients),
+    ingredients: p.ingredients,
+    source: 'builtin' as const,
+  }));
 }
 
-export function lookupBuiltIn(name: string, brand: string): SearchResult | undefined {
+export function lookupBuiltIn(
+  name: string,
+  brand: string,
+): SearchResult | undefined {
   const nameLower = name.toLowerCase();
   const brandLower = brand.toLowerCase();
   const match = BUILT_IN_PRODUCTS.find((p) => {
     const pName = p.name.toLowerCase();
     const pBrand = p.brand.toLowerCase();
-    return (pName.includes(nameLower) || nameLower.includes(pName)) &&
-           (pBrand.includes(brandLower) || brandLower.includes(pBrand));
+    return (
+      (pName.includes(nameLower) || nameLower.includes(pName)) &&
+      (pBrand.includes(brandLower) || brandLower.includes(pBrand))
+    );
   });
   if (!match) return undefined;
   return {
@@ -304,7 +327,9 @@ export async function searchProducts(query: string): Promise<SearchResult[]> {
     });
 
     const results = await Promise.allSettled(fetches);
-    const apiResults = results.flatMap((r) => r.status === 'fulfilled' ? r.value : []);
+    const apiResults = results.flatMap((r) =>
+      r.status === 'fulfilled' ? r.value : [],
+    );
 
     for (const r of apiResults) {
       const key = `${r.name}::${r.brand}`.toLowerCase();
@@ -321,7 +346,10 @@ export async function searchProducts(query: string): Promise<SearchResult[]> {
 }
 
 // Targeted lookup for a specific product (used for post-add flag detection)
-export async function lookupProduct(name: string, brand: string): Promise<string[]> {
+export async function lookupProduct(
+  name: string,
+  brand: string,
+): Promise<string[]> {
   const query = `${brand} ${name}`;
   try {
     const fetches = API_BASES.map(async (base) => {
@@ -335,15 +363,19 @@ export async function lookupProduct(name: string, brand: string): Promise<string
     });
 
     const results = await Promise.allSettled(fetches);
-    const allProducts = results.flatMap((r) => r.status === 'fulfilled' ? r.value : []);
+    const allProducts = results.flatMap((r) =>
+      r.status === 'fulfilled' ? r.value : [],
+    );
 
     const nameLower = name.toLowerCase();
     const brandLower = brand.toLowerCase();
     const match = allProducts.find((p) => {
       const pName = (p.product_name ?? '').toLowerCase();
       const pBrand = (p.brands ?? '').toLowerCase();
-      return (pName.includes(nameLower) || nameLower.includes(pName)) &&
-             (pBrand.includes(brandLower) || brandLower.includes(pBrand));
+      return (
+        (pName.includes(nameLower) || nameLower.includes(pName)) &&
+        (pBrand.includes(brandLower) || brandLower.includes(pBrand))
+      );
     });
 
     if (!match) return [];
@@ -378,17 +410,25 @@ async function saveUserCatalog(catalog: UserCatalogEntry[]): Promise<void> {
 export async function addToUserCatalog(entry: UserCatalogEntry): Promise<void> {
   const catalog = await getUserCatalog();
   const key = `${entry.name}::${entry.brand}`.toLowerCase();
-  const exists = catalog.some((e) => `${e.name}::${e.brand}`.toLowerCase() === key);
+  const exists = catalog.some(
+    (e) => `${e.name}::${e.brand}`.toLowerCase() === key,
+  );
   if (!exists) {
     catalog.push(entry);
     await saveUserCatalog(catalog);
   }
 }
 
-export async function updateUserCatalogFlags(name: string, brand: string, flagKeys: string[]): Promise<void> {
+export async function updateUserCatalogFlags(
+  name: string,
+  brand: string,
+  flagKeys: string[],
+): Promise<void> {
   const catalog = await getUserCatalog();
   const key = `${name}::${brand}`.toLowerCase();
-  const entry = catalog.find((e) => `${e.name}::${e.brand}`.toLowerCase() === key);
+  const entry = catalog.find(
+    (e) => `${e.name}::${e.brand}`.toLowerCase() === key,
+  );
   if (entry) {
     entry.flagKeys = flagKeys;
     await saveUserCatalog(catalog);
@@ -399,6 +439,9 @@ async function searchUserCatalog(query: string): Promise<SearchResult[]> {
   const q = query.toLowerCase();
   const catalog = await getUserCatalog();
   return catalog
-    .filter((e) => e.name.toLowerCase().includes(q) || e.brand.toLowerCase().includes(q))
+    .filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) || e.brand.toLowerCase().includes(q),
+    )
     .map((e) => ({ ...e, source: 'user' as const }));
 }

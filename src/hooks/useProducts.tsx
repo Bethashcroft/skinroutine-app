@@ -16,7 +16,12 @@ import { useAuth } from './useAuth';
 import { addToUserCatalog } from '../data/product-search';
 import { flagsToOptionKeys } from '../data/ingredient-flags';
 import { submitCommunityFlags } from '../lib/supabase';
-import { pushProducts, pullProducts, pullDeletedProductIds, deleteRemoteProduct } from '../lib/sync';
+import {
+  pushProducts,
+  pullProducts,
+  pullDeletedProductIds,
+  deleteRemoteProduct,
+} from '../lib/sync';
 import { dbGet, dbSet } from '../lib/db';
 import { productsKey, LEGACY_PRODUCTS_KEY } from '../lib/storage-keys';
 
@@ -49,10 +54,12 @@ function useProductsState(): ProductsContextValue {
   const { user } = useAuth();
   const key = productsKey(user?.id);
   const [products, setProducts, isReady] = useStoredState<Product[]>(key, []);
-  const hasSynced = useRef(false);
+  const syncedUserRef = useRef<string | null>(null);
   const migratedLegacy = useRef(false);
-  const [initialSyncDone, setInitialSyncDone] = useState(!user);
+  const [syncedUserId, setSyncedUserId] = useState<string | null>(null);
   const [isNewUser, setIsNewUser] = useState(false);
+
+  const initialSyncDone = !user || syncedUserId === user.id;
 
   useEffect(() => {
     if (!user?.id || migratedLegacy.current || !isReady) return;
@@ -71,14 +78,14 @@ function useProductsState(): ProductsContextValue {
   }, [user?.id, isReady, key, setProducts]);
 
   useEffect(() => {
-    if (!user) {
-      hasSynced.current = false;
-      setInitialSyncDone(true);
-      setIsNewUser(false);
-      return;
-    }
-    if (!isReady || hasSynced.current) return;
-    hasSynced.current = true;
+    if (!user) syncedUserRef.current = null;
+  }, [user]);
+
+  useEffect(() => {
+    if (!user || !isReady) return;
+    if (syncedUserRef.current === user.id) return;
+    syncedUserRef.current = user.id;
+    const userId = user.id;
 
     Promise.all([pullProducts(), pullDeletedProductIds()])
       .then(([remote, deletedIds]) => {
@@ -102,9 +109,9 @@ function useProductsState(): ProductsContextValue {
         });
       })
       .catch(() => {
-        setIsNewUser(true);
+        setIsNewUser(false);
       })
-      .finally(() => setInitialSyncDone(true));
+      .finally(() => setSyncedUserId(userId));
   }, [user, isReady, setProducts]);
 
   const syncProduct = useCallback(
@@ -160,16 +167,20 @@ function useProductsState(): ProductsContextValue {
         brand: input.brand,
         category: input.category,
         flags: input.flags,
-        ingredients: input.ingredients ?? existing.ingredients,
-        notes: input.notes ?? existing.notes,
-        openedAt: input.openedAt ?? existing.openedAt,
-        paoMonths: input.paoMonths ?? existing.paoMonths,
+        ingredients: input.ingredients,
+        notes: input.notes,
+        openedAt: input.openedAt,
+        paoMonths: input.paoMonths,
       };
 
       setProducts((prev) => prev.map((p) => (p.id === id ? saved : p)));
 
       if (saved.flags.length > 0) {
-        submitCommunityFlags(saved.name, saved.brand, flagsToOptionKeys(saved.flags));
+        submitCommunityFlags(
+          saved.name,
+          saved.brand,
+          flagsToOptionKeys(saved.flags),
+        );
       }
 
       syncProduct(saved);
@@ -210,7 +221,11 @@ function useProductsState(): ProductsContextValue {
 
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const value = useProductsState();
-  return <ProductsContext.Provider value={value}>{children}</ProductsContext.Provider>;
+  return (
+    <ProductsContext.Provider value={value}>
+      {children}
+    </ProductsContext.Provider>
+  );
 }
 
 export function useProducts() {

@@ -7,7 +7,9 @@ function ProductPill({ product }: { product: Product }) {
       className="inline-flex max-w-full items-center rounded-full bg-white/55 dark:bg-white/12
                  border border-white/40 dark:border-white/15
                  px-2.5 py-1 text-xs font-medium text-gray-800 dark:text-gray-100 truncate"
-      title={product.brand ? `${product.name} · ${product.brand}` : product.name}
+      title={
+        product.brand ? `${product.name} · ${product.brand}` : product.name
+      }
     >
       {product.name}
     </span>
@@ -27,14 +29,18 @@ function ConflictItem({ match }: { match: ConflictMatch }) {
     >
       <p
         className={`text-[11px] font-bold uppercase tracking-wide ${
-          isWarning ? 'text-red-600 dark:text-red-400' : 'text-amber-700 dark:text-amber-400'
+          isWarning
+            ? 'text-red-600 dark:text-red-400'
+            : 'text-amber-700 dark:text-amber-400'
         }`}
       >
         {isWarning ? 'Warning' : 'Heads up'}
       </p>
       <p
         className={`mt-1 text-sm leading-relaxed ${
-          isWarning ? 'text-red-900/90 dark:text-red-100/90' : 'text-amber-900/90 dark:text-amber-100/90'
+          isWarning
+            ? 'text-red-900/90 dark:text-red-100/90'
+            : 'text-amber-900/90 dark:text-amber-100/90'
         }`}
       >
         {match.rule.message}
@@ -70,8 +76,12 @@ export default function LibraryConflictPanel({
   return (
     <section className="card-solid noise overflow-hidden">
       <div className="px-5 sm:px-6 py-4 border-b border-white/15 dark:border-white/8">
-        <h3 className="font-bold text-gray-800 dark:text-gray-100 tracking-tight">{title}</h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{subtitle}</p>
+        <h3 className="font-bold text-gray-800 dark:text-gray-100 tracking-tight">
+          {title}
+        </h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          {subtitle}
+        </p>
       </div>
       <div className="px-5 sm:px-6 py-4 space-y-3">
         {conflicts.map((c) => (

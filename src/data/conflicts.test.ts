@@ -8,7 +8,11 @@ import {
 } from './conflicts';
 import type { Product, IngredientFlag } from '../types';
 
-function makeProduct(id: string, flagIngredients: string[], extra: Partial<Product> = {}): Product {
+function makeProduct(
+  id: string,
+  flagIngredients: string[],
+  extra: Partial<Product> = {},
+): Product {
   const flags: IngredientFlag[] = flagIngredients.map((ingredient) => ({
     ingredient,
     category: 'active',
@@ -63,7 +67,9 @@ describe('detectConflicts', () => {
       makeProduct('2', ['Salicylic Acid (BHA)']),
     ];
     const matches = detectConflicts(products);
-    expect(matches.find((m) => m.rule.id === 'benzoyl-peroxide-aha')).toBeDefined();
+    expect(
+      matches.find((m) => m.rule.id === 'benzoyl-peroxide-aha'),
+    ).toBeDefined();
   });
 
   it('returns no conflict for two unrelated products', () => {
@@ -77,10 +83,7 @@ describe('detectConflicts', () => {
 
 describe('detectLibraryConflicts', () => {
   it('ignores products without flags', () => {
-    const products = [
-      makeProduct('1', []),
-      makeProduct('2', []),
-    ];
+    const products = [makeProduct('1', []), makeProduct('2', [])];
     expect(detectLibraryConflicts(products)).toEqual([]);
   });
 
@@ -96,12 +99,18 @@ describe('detectLibraryConflicts', () => {
 describe('getProductExpiryDate', () => {
   it('returns null when openedAt or paoMonths missing', () => {
     expect(getProductExpiryDate(makeProduct('1', []))).toBeNull();
-    expect(getProductExpiryDate(makeProduct('1', [], { openedAt: '2026-01-01' }))).toBeNull();
-    expect(getProductExpiryDate(makeProduct('1', [], { paoMonths: 6 }))).toBeNull();
+    expect(
+      getProductExpiryDate(makeProduct('1', [], { openedAt: '2026-01-01' })),
+    ).toBeNull();
+    expect(
+      getProductExpiryDate(makeProduct('1', [], { paoMonths: 6 })),
+    ).toBeNull();
   });
 
   it('parses date-only openedAt at local midnight (not UTC)', () => {
-    const d = getProductExpiryDate(makeProduct('1', [], { openedAt: '2026-01-01', paoMonths: 6 }))!;
+    const d = getProductExpiryDate(
+      makeProduct('1', [], { openedAt: '2026-01-01', paoMonths: 6 }),
+    )!;
     expect(d).not.toBeNull();
     // Local date components should reflect the local-midnight parse: 1 Jan + 6 months = 1 Jul
     expect(d.getFullYear()).toBe(2026);
@@ -145,12 +154,21 @@ describe('getProductsByExpiry', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-06-15T12:00:00.000Z'));
 
-    const expired = makeProduct('1', [], { openedAt: '2025-01-01', paoMonths: 6 });
+    const expired = makeProduct('1', [], {
+      openedAt: '2025-01-01',
+      paoMonths: 6,
+    });
     const soon = makeProduct('2', [], { openedAt: '2026-01-01', paoMonths: 6 });
-    const fine = makeProduct('3', [], { openedAt: '2026-06-01', paoMonths: 12 });
+    const fine = makeProduct('3', [], {
+      openedAt: '2026-06-01',
+      paoMonths: 12,
+    });
     const noPao = makeProduct('4', []);
 
-    const { expired: e, expiringSoon: s } = getProductsByExpiry([expired, soon, fine, noPao], 30);
+    const { expired: e, expiringSoon: s } = getProductsByExpiry(
+      [expired, soon, fine, noPao],
+      30,
+    );
     expect(e.map((p) => p.id)).toEqual(['1']);
     expect(s.map((p) => p.id)).toEqual(['2']);
 

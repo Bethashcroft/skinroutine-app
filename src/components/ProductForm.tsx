@@ -1,50 +1,55 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { Product, ProductCategory, IngredientFlag } from '../types';
-import { flagOptionsToFlags, flagsToOptionKeys } from '../data/ingredient-flags';
-import { searchProducts, detectFlagsFromIngredients, type SearchResult } from '../data/product-search';
-import { dbGet, dbSet } from '../lib/db';
+import {
+  flagOptionsToFlags,
+  flagsToOptionKeys,
+} from '../data/ingredient-flags';
+import {
+  searchProducts,
+  detectFlagsFromIngredients,
+  type SearchResult,
+} from '../data/product-search';
+import {
+  BUILT_IN_CATEGORIES,
+  capitalize,
+  getCategoryLabel,
+  loadCustomCategories,
+  saveCustomCategory,
+} from '../data/categories';
 import { useClickOutside } from '../hooks/useClickOutside';
 import FlagPicker from './FlagPicker';
 
-const BUILT_IN_CATEGORIES: { value: ProductCategory; label: string }[] = [
-  { value: 'cleanser', label: 'Cleanser' },
-  { value: 'toner', label: 'Toner' },
-  { value: 'serum', label: 'Serum' },
-  { value: 'moisturiser', label: 'Moisturiser' },
-  { value: 'spf', label: 'SPF' },
-  { value: 'treatment', label: 'Treatment' },
-  { value: 'mask', label: 'Face Mask' },
-  { value: 'other', label: 'Other' },
-];
-
-const CUSTOM_CATEGORIES_KEY = 'routinelog:custom-categories';
-
-async function loadCustomCategories(): Promise<string[]> {
-  return (await dbGet<string[]>(CUSTOM_CATEGORIES_KEY)) ?? [];
-}
-
-async function saveCustomCategory(name: string): Promise<void> {
-  const existing = await loadCustomCategories();
-  if (!existing.includes(name)) {
-    await dbSet(CUSTOM_CATEGORIES_KEY, [...existing, name]);
-  }
-}
-
 interface Props {
   onSubmit: (data: {
-    name: string; brand: string; category: ProductCategory; flags: IngredientFlag[];
-    ingredients?: string; notes?: string; openedAt?: string; paoMonths?: number;
+    name: string;
+    brand: string;
+    category: ProductCategory;
+    flags: IngredientFlag[];
+    ingredients?: string;
+    notes?: string;
+    openedAt?: string;
+    paoMonths?: number;
   }) => void;
   onCancel: () => void;
   initial?: Product;
   ownedKeys?: Set<string>;
 }
 
-const isMobile = typeof window !== 'undefined' &&
+const isMobile =
+  typeof window !== 'undefined' &&
   window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 
-export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: Props) {
+export default function ProductForm({
+  onSubmit,
+  onCancel,
+  initial,
+  ownedKeys,
+}: Props) {
   const isEditing = !!initial;
+  const initialIsCustomCategory =
+    !!initial &&
+    initial.category !== 'other' &&
+    !BUILT_IN_CATEGORIES.some((c) => c.value === initial.category);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
@@ -53,16 +58,24 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
 
   const [name, setName] = useState(initial?.name ?? '');
   const [brand, setBrand] = useState(initial?.brand ?? '');
-  const [category, setCategory] = useState<ProductCategory>(initial?.category ?? 'cleanser');
-  const [customCategoryName, setCustomCategoryName] = useState('');
-  const [savedCustomCategories, setSavedCustomCategories] = useState<string[]>([]);
+  const [category, setCategory] = useState<ProductCategory>(
+    initialIsCustomCategory ? 'other' : (initial?.category ?? 'cleanser'),
+  );
+  const [customCategoryName, setCustomCategoryName] = useState(
+    initialIsCustomCategory ? initial!.category : '',
+  );
+  const [savedCustomCategories, setSavedCustomCategories] = useState<string[]>(
+    [],
+  );
   const [selectedFlags, setSelectedFlags] = useState<string[]>(
     initial ? flagsToOptionKeys(initial.flags) : [],
   );
   const [showFlags, setShowFlags] = useState(isEditing);
 
   const [ingredients, setIngredients] = useState(initial?.ingredients ?? '');
-  const [showIngredients, setShowIngredients] = useState(!!initial?.ingredients);
+  const [showIngredients, setShowIngredients] = useState(
+    !!initial?.ingredients,
+  );
   const [ocrProcessing, setOcrProcessing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState(0);
   const [ocrError, setOcrError] = useState('');
@@ -70,33 +83,29 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
 
   const [productNotes, setProductNotes] = useState(initial?.notes ?? '');
   const [openedAt, setOpenedAt] = useState(initial?.openedAt ?? '');
-  const [paoMonths, setPaoMonths] = useState(initial?.paoMonths?.toString() ?? '');
+  const [paoMonths, setPaoMonths] = useState(
+    initial?.paoMonths?.toString() ?? '',
+  );
 
   const detectedFromPaste = useMemo(
     () => (ingredients.trim() ? detectFlagsFromIngredients(ingredients) : []),
     [ingredients],
   );
 
-  useEffect(() => {
-    if (detectedFromPaste.length === 0) return;
+  const applyIngredients = useCallback((text: string) => {
+    setIngredients(text);
+    const detected = text.trim() ? detectFlagsFromIngredients(text) : [];
+    if (detected.length === 0) return;
     setSelectedFlags((prev) => {
-      const merged = new Set([...prev, ...detectedFromPaste]);
+      const merged = new Set([...prev, ...detected]);
       return merged.size === prev.length ? prev : [...merged];
     });
-  }, [detectedFromPaste]);
+  }, []);
 
-  const isBuiltIn = BUILT_IN_CATEGORIES.some((c) => c.value === category);
   const showCustomInput = category === 'other';
 
   useEffect(() => {
     loadCustomCategories().then(setSavedCustomCategories);
-  }, []);
-
-  useEffect(() => {
-    if (initial && !isBuiltIn && initial.category !== 'other') {
-      setCustomCategoryName(initial.category);
-      setCategory('other');
-    }
   }, []);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -175,7 +184,7 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
       await worker.terminate();
       const text = data.text.trim();
       if (text) {
-        setIngredients(text);
+        applyIngredients(text);
         setShowIngredients(true);
       } else {
         setOcrError('No text detected — try a clearer photo');
@@ -200,9 +209,10 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
     e.preventDefault();
     if (!canSubmit) return;
 
-    const finalCategory = (category === 'other' && customCategoryName.trim())
-      ? customCategoryName.trim().toLowerCase()
-      : category;
+    const finalCategory =
+      category === 'other' && customCategoryName.trim()
+        ? customCategoryName.trim().toLowerCase()
+        : category;
 
     if (category === 'other' && customCategoryName.trim()) {
       saveCustomCategory(customCategoryName.trim().toLowerCase());
@@ -216,15 +226,19 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
       ...(ingredients.trim() ? { ingredients: ingredients.trim() } : {}),
       ...(productNotes.trim() ? { notes: productNotes.trim() } : {}),
       ...(openedAt ? { openedAt } : {}),
-      ...(paoMonths && parseInt(paoMonths) > 0 ? { paoMonths: parseInt(paoMonths) } : {}),
+      ...(paoMonths && parseInt(paoMonths) > 0
+        ? { paoMonths: parseInt(paoMonths) }
+        : {}),
     });
   }
 
-  const selectValue = category === 'other'
-    ? (customCategoryName && savedCustomCategories.includes(customCategoryName.toLowerCase())
+  const selectValue =
+    category === 'other'
+      ? customCategoryName &&
+        savedCustomCategories.includes(customCategoryName.toLowerCase())
         ? `custom:${customCategoryName.toLowerCase()}`
-        : 'other')
-    : category;
+        : 'other'
+      : category;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -234,8 +248,18 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
             Quick search
           </span>
           <div className="relative">
-            <svg className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-300 dark:text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
               type="text"
@@ -254,9 +278,11 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
           </div>
 
           {showResults && (
-            <div className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl shadow-xl backdrop-blur-xl
+            <div
+              className="absolute z-20 mt-1.5 w-full overflow-hidden rounded-xl shadow-xl backdrop-blur-xl
                             bg-white/80 border border-white/30
-                            dark:bg-dark-card/90 dark:border-white/10">
+                            dark:bg-dark-card/90 dark:border-white/10"
+            >
               {results.length > 0 ? (
                 <ul className="max-h-72 overflow-y-auto py-1">
                   {results.map((product, i) => (
@@ -268,24 +294,35 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
                                    hover:bg-white/40 dark:hover:bg-white/5"
                       >
                         <div className="flex-1 min-w-0">
-                          <span className="block truncate text-sm font-medium text-gray-800 dark:text-gray-200">{product.name}</span>
+                          <span className="block truncate text-sm font-medium text-gray-800 dark:text-gray-200">
+                            {product.name}
+                          </span>
                           <span className="text-xs text-gray-400 dark:text-gray-500">
                             {product.brand}
                             {product.source === 'builtin' && (
-                              <span className="ml-1.5 text-emerald-600 dark:text-emerald-400"> · ingredients included</span>
+                              <span className="ml-1.5 text-emerald-600 dark:text-emerald-400">
+                                {' '}
+                                · ingredients included
+                              </span>
                             )}
                           </span>
                         </div>
-                        {ownedKeys?.has(`${product.name.toLowerCase()}|${product.brand.toLowerCase()}`) ? (
-                          <span className="shrink-0 rounded-full bg-emerald-500/15 dark:bg-emerald-500/10
+                        {ownedKeys?.has(
+                          `${product.name.toLowerCase()}|${product.brand.toLowerCase()}`,
+                        ) ? (
+                          <span
+                            className="shrink-0 rounded-full bg-emerald-500/15 dark:bg-emerald-500/10
                                            px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-400
-                                           border border-emerald-400/20 dark:border-emerald-500/15">
+                                           border border-emerald-400/20 dark:border-emerald-500/15"
+                          >
                             In library
                           </span>
                         ) : (
-                          <span className="shrink-0 rounded-full bg-white/40 dark:bg-white/8 backdrop-blur
+                          <span
+                            className="shrink-0 rounded-full bg-white/40 dark:bg-white/8 backdrop-blur
                                            px-2 py-0.5 text-[10px] font-bold text-sand-600 dark:text-sand-400
-                                           border border-white/20 dark:border-white/8">
+                                           border border-white/20 dark:border-white/8"
+                          >
                             {getCategoryLabel(product.category)}
                           </span>
                         )}
@@ -296,7 +333,9 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
               ) : searching ? (
                 <div className="flex items-center justify-center gap-2 px-4 py-5">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-sand-300 border-t-sand-600" />
-                  <span className="text-sm text-gray-400 dark:text-gray-500">Searching...</span>
+                  <span className="text-sm text-gray-400 dark:text-gray-500">
+                    Searching...
+                  </span>
                 </div>
               ) : (
                 <div className="px-4 py-3 text-center text-sm text-gray-400 dark:text-gray-500">
@@ -311,7 +350,9 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
       {!isEditing && (
         <div className="flex items-center gap-3">
           <div className="h-px flex-1 bg-white/20 dark:bg-white/8" />
-          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">Product details</span>
+          <span className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            Product details
+          </span>
           <div className="h-px flex-1 bg-white/20 dark:bg-white/8" />
         </div>
       )}
@@ -321,15 +362,25 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
             Product name
           </span>
-          <input type="text" value={name} onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Hydrating Cleanser" className="glass-input w-full px-3.5 py-2.5" />
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Hydrating Cleanser"
+            className="glass-input w-full px-3.5 py-2.5"
+          />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
             Brand
           </span>
-          <input type="text" value={brand} onChange={(e) => setBrand(e.target.value)}
-            placeholder="e.g. CeraVe" className="glass-input w-full px-3.5 py-2.5" />
+          <input
+            type="text"
+            value={brand}
+            onChange={(e) => setBrand(e.target.value)}
+            placeholder="e.g. CeraVe"
+            className="glass-input w-full px-3.5 py-2.5"
+          />
         </label>
       </div>
 
@@ -344,12 +395,16 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
             className="glass-input w-full px-3.5 py-2.5"
           >
             {BUILT_IN_CATEGORIES.map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
             ))}
             {savedCustomCategories.length > 0 && (
               <optgroup label="Your categories">
                 {savedCustomCategories.map((c) => (
-                  <option key={c} value={`custom:${c}`}>{capitalize(c)}</option>
+                  <option key={c} value={`custom:${c}`}>
+                    {capitalize(c)}
+                  </option>
                 ))}
               </optgroup>
             )}
@@ -393,8 +448,18 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
                      hover:bg-white/30 dark:hover:bg-white/8"
         >
           <span className="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+              />
             </svg>
             Paste or scan ingredients
             {detectedFromPaste.length > 0 && (
@@ -405,9 +470,16 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
           </span>
           <svg
             className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${showIngredients ? 'rotate-180' : ''}`}
-            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -422,23 +494,49 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
               >
                 {isMobile ? (
                   <>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                     Snap ingredients label
                   </>
                 ) : (
                   <>
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                     Upload ingredients photo
                   </>
                 )}
               </button>
               <span className="text-[11px] text-gray-400 dark:text-gray-500">
-                {isMobile ? 'or paste the list from the packaging below' : 'JPG, PNG, or WebP'}
+                {isMobile
+                  ? 'or paste the list from the packaging below'
+                  : 'JPG, PNG, or WebP'}
               </span>
             </div>
 
@@ -458,12 +556,17 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
             )}
 
             {ocrError && (
-              <p className="text-xs text-red-500 dark:text-red-400">{ocrError}</p>
+              <p className="text-xs text-red-500 dark:text-red-400">
+                {ocrError}
+              </p>
             )}
 
             <textarea
               value={ingredients}
-              onChange={(e) => { setIngredients(e.target.value); setOcrError(''); }}
+              onChange={(e) => {
+                applyIngredients(e.target.value);
+                setOcrError('');
+              }}
               placeholder="Paste the full INCI ingredients list from the back of the product or brand website..."
               rows={6}
               className="glass-input w-full resize-y px-3.5 py-2.5 text-sm leading-relaxed"
@@ -472,13 +575,19 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
             {detectedFromPaste.length > 0 && (
               <div className="rounded-xl bg-emerald-500/10 backdrop-blur border border-emerald-400/20 dark:border-emerald-500/10 px-3.5 py-2.5">
                 <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1.5">
-                  {detectedFromPaste.length} flag{detectedFromPaste.length !== 1 ? 's' : ''} detected
+                  {detectedFromPaste.length} flag
+                  {detectedFromPaste.length !== 1 ? 's' : ''} detected
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {detectedFromPaste.map((key) => (
-                    <span key={key} className="rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20
-                                               px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
-                      {key.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                    <span
+                      key={key}
+                      className="rounded-lg bg-emerald-500/15 dark:bg-emerald-500/20
+                                               px-2 py-0.5 text-[11px] font-medium text-emerald-800 dark:text-emerald-300"
+                    >
+                      {key
+                        .replace(/-/g, ' ')
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
                     </span>
                   ))}
                 </div>
@@ -555,9 +664,12 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
           {!showFlags && (
             <div className="mt-2 flex flex-wrap gap-1.5">
               {flagOptionsToFlags(selectedFlags).map((f, i) => (
-                <span key={i} className="rounded-lg bg-white/30 dark:bg-white/8 backdrop-blur
+                <span
+                  key={i}
+                  className="rounded-lg bg-white/30 dark:bg-white/8 backdrop-blur
                                          border border-white/20 dark:border-white/8
-                                         px-2 py-0.5 text-xs font-medium text-sand-700 dark:text-sand-400">
+                                         px-2 py-0.5 text-xs font-medium text-sand-700 dark:text-sand-400"
+                >
                   {f.ingredient}
                 </span>
               ))}
@@ -566,24 +678,30 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
         </div>
       )}
 
-      {name.trim() && brand.trim() && ingredients.trim() && selectedFlags.length === 0 && !showFlags && (
-        <div className="flex items-center justify-between rounded-xl bg-emerald-500/10 backdrop-blur
+      {name.trim() &&
+        brand.trim() &&
+        ingredients.trim() &&
+        selectedFlags.length === 0 &&
+        !showFlags && (
+          <div
+            className="flex items-center justify-between rounded-xl bg-emerald-500/10 backdrop-blur
                         border border-emerald-400/20 dark:border-emerald-500/10
-                        px-3.5 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
-          <div className="flex items-center gap-2">
-            <span className="text-base">✅</span>
-            No known flags for this product
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowFlags(true)}
-            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors
-                       dark:text-emerald-400 dark:hover:text-emerald-300"
+                        px-3.5 py-2.5 text-sm text-emerald-700 dark:text-emerald-400"
           >
-            Add manually
-          </button>
-        </div>
-      )}
+            <div className="flex items-center gap-2">
+              <span className="text-base">✅</span>
+              No known flags for this product
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowFlags(true)}
+              className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 transition-colors
+                       dark:text-emerald-400 dark:hover:text-emerald-300"
+            >
+              Add manually
+            </button>
+          </div>
+        )}
 
       {showFlags && (
         <FlagPicker selected={selectedFlags} onChange={setSelectedFlags} />
@@ -599,14 +717,4 @@ export default function ProductForm({ onSubmit, onCancel, initial, ownedKeys }: 
       </div>
     </form>
   );
-}
-
-function capitalize(s: string): string {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-export function getCategoryLabel(category: string): string {
-  const built = BUILT_IN_CATEGORIES.find((c) => c.value === category);
-  if (built) return built.label;
-  return capitalize(category);
 }

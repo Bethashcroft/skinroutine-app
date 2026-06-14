@@ -3,7 +3,12 @@ import type { Product, FlagCategory } from '../types';
 import { FLAG_META } from '../data/ingredient-flags';
 import { findFlaggedSubstrings } from '../data/product-search';
 
-const CATEGORY_ORDER: FlagCategory[] = ['fragrance', 'irritant', 'comedogenic', 'active'];
+const CATEGORY_ORDER: FlagCategory[] = [
+  'fragrance',
+  'irritant',
+  'comedogenic',
+  'active',
+];
 
 const ACCENT_BORDER: Record<FlagCategory, string> = {
   fragrance: 'border-l-red-400 dark:border-l-red-500',
@@ -56,8 +61,13 @@ function HighlightedIngredients({ text }: { text: string }) {
     <p className="text-xs leading-relaxed text-gray-600 dark:text-gray-400">
       {spans.map((s, i) =>
         s.highlighted ? (
-          <mark key={i} className="rounded bg-sand-300/50 dark:bg-sand-500/30 px-0.5
-                                   text-sand-800 dark:text-sand-200 font-semibold">{s.text}</mark>
+          <mark
+            key={i}
+            className="rounded bg-sand-300/50 dark:bg-sand-500/30 px-0.5
+                                   text-sand-800 dark:text-sand-200 font-semibold"
+          >
+            {s.text}
+          </mark>
         ) : (
           <span key={i}>{s.text}</span>
         ),
@@ -78,9 +88,11 @@ export default function IngredientAnalysis({ product }: { product: Product }) {
 
   if (product.flags.length === 0 && !product.ingredients) {
     return (
-      <div className="flex items-center gap-2 rounded-xl bg-emerald-500/10 backdrop-blur
+      <div
+        className="flex items-center gap-2 rounded-xl bg-emerald-500/10 backdrop-blur
                       border border-emerald-400/20 dark:border-emerald-500/10
-                      px-3.5 py-2.5 text-sm text-emerald-700 dark:text-emerald-400">
+                      px-3.5 py-2.5 text-sm text-emerald-700 dark:text-emerald-400"
+      >
         <span className="text-base">✅</span>
         No flagged ingredients — looking clean!
       </div>
@@ -120,16 +132,25 @@ export default function IngredientAnalysis({ product }: { product: Product }) {
           >
             <svg
               className={`h-3 w-3 transition-transform duration-200 ${showRawIngredients ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
             Full ingredients
           </button>
 
           {showRawIngredients && (
-            <div className="mt-2 rounded-xl bg-white/15 dark:bg-white/5 backdrop-blur
-                            border border-white/15 dark:border-white/8 px-3.5 py-3">
+            <div
+              className="mt-2 rounded-xl bg-white/15 dark:bg-white/5 backdrop-blur
+                            border border-white/15 dark:border-white/8 px-3.5 py-3"
+            >
               <HighlightedIngredients text={product.ingredients} />
             </div>
           )}

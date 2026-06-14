@@ -21,49 +21,56 @@ const RULES: ConflictRule[] = [
     groupA: RETINOIDS,
     groupB: AHAS,
     severity: 'warning',
-    message: 'Retinoids + AHAs together can cause excessive irritation & peeling. Alternate nights instead.',
+    message:
+      'Retinoids + AHAs together can cause excessive irritation & peeling. Alternate nights instead.',
   },
   {
     id: 'retinoid-bha',
     groupA: RETINOIDS,
     groupB: BHAS,
     severity: 'caution',
-    message: 'Retinoids + BHA in the same routine may over-exfoliate. Use on different nights if skin is sensitive.',
+    message:
+      'Retinoids + BHA in the same routine may over-exfoliate. Use on different nights if skin is sensitive.',
   },
   {
     id: 'retinoid-vitamin-c',
     groupA: RETINOIDS,
     groupB: VITAMIN_C,
     severity: 'caution',
-    message: 'Retinoids + Vitamin C can reduce each other\'s efficacy and cause irritation. Use Vitamin C in AM, retinoid in PM.',
+    message:
+      "Retinoids + Vitamin C can reduce each other's efficacy and cause irritation. Use Vitamin C in AM, retinoid in PM.",
   },
   {
     id: 'retinoid-benzoyl-peroxide',
     groupA: RETINOIDS,
     groupB: BENZOYL_PEROXIDE,
     severity: 'warning',
-    message: 'Benzoyl Peroxide can deactivate retinoids. Apply at different times or alternate days.',
+    message:
+      'Benzoyl Peroxide can deactivate retinoids. Apply at different times or alternate days.',
   },
   {
     id: 'aha-vitamin-c',
     groupA: AHAS,
     groupB: VITAMIN_C,
     severity: 'caution',
-    message: 'AHAs + Vitamin C at low pH can cause irritation. Space them out or use in different sessions.',
+    message:
+      'AHAs + Vitamin C at low pH can cause irritation. Space them out or use in different sessions.',
   },
   {
     id: 'vitamin-c-niacinamide',
     groupA: VITAMIN_C,
     groupB: NIACINAMIDE,
     severity: 'caution',
-    message: 'Vitamin C + Niacinamide may flush or tingle. Modern formulations usually work fine, but watch for redness.',
+    message:
+      'Vitamin C + Niacinamide may flush or tingle. Modern formulations usually work fine, but watch for redness.',
   },
   {
     id: 'benzoyl-peroxide-aha',
     groupA: BENZOYL_PEROXIDE,
     groupB: [...AHAS, ...BHAS],
     severity: 'warning',
-    message: 'Benzoyl Peroxide + exfoliating acids together can cause severe dryness and irritation.',
+    message:
+      'Benzoyl Peroxide + exfoliating acids together can cause severe dryness and irritation.',
   },
 ];
 
@@ -89,7 +96,10 @@ export interface ConflictMatch {
 export function detectConflicts(products: Product[]): ConflictMatch[] {
   if (products.length < 2) return [];
 
-  const productFlagSets = products.map((p) => ({ product: p, keys: getFlagKeys(p) }));
+  const productFlagSets = products.map((p) => ({
+    product: p,
+    keys: getFlagKeys(p),
+  }));
   const matches: ConflictMatch[] = [];
 
   for (const rule of RULES) {
@@ -114,7 +124,8 @@ export function detectConflicts(products: Product[]): ConflictMatch[] {
 
     const aIds = new Set(productsInA.map((p) => p.product.id));
     const bIds = new Set(productsInB.map((p) => p.product.id));
-    const bothSameProduct = [...aIds].every((id) => bIds.has(id)) && aIds.size === bIds.size;
+    const bothSameProduct =
+      [...aIds].every((id) => bIds.has(id)) && aIds.size === bIds.size;
     if (bothSameProduct && aIds.size === 1) continue;
 
     matches.push({
@@ -137,7 +148,10 @@ export function getProductExpiryDate(product: Product): Date | null {
 
 export type ExpiryStatus = 'expired' | 'expiring-soon';
 
-export function getExpiryStatus(product: Product, withinDays = 30): ExpiryStatus | null {
+export function getExpiryStatus(
+  product: Product,
+  withinDays = 30,
+): ExpiryStatus | null {
   const expires = getProductExpiryDate(product);
   if (!expires) return null;
   const now = new Date();

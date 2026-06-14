@@ -5,7 +5,12 @@ interface Props {
   retrying?: boolean;
 }
 
-export default function SyncFailedModal({ open, onClose, onRetry, retrying }: Props) {
+export default function SyncFailedModal({
+  open,
+  onClose,
+  onRetry,
+  retrying,
+}: Props) {
   if (!open) return null;
 
   return (
@@ -23,12 +28,15 @@ export default function SyncFailedModal({ open, onClose, onRetry, retrying }: Pr
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-5 py-5">
-          <h2 id="sync-failed-title" className="text-lg font-bold text-gray-800 dark:text-gray-100">
+          <h2
+            id="sync-failed-title"
+            className="text-lg font-bold text-gray-800 dark:text-gray-100"
+          >
             Cloud sync failed
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-            We couldn&apos;t sync your data to the cloud right now. Your information is still saved on this device.
-            Please try again later.
+            We couldn&apos;t sync your data to the cloud right now. Your
+            information is still saved on this device. Please try again later.
           </p>
         </div>
         <div className="flex gap-2 border-t border-gray-200/60 dark:border-white/10 px-5 py-4">

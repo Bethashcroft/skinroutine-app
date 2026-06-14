@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { Product } from '../types';
-import { getCategoryLabel } from './ProductForm';
+import { getCategoryLabel } from '../data/categories';
 
 interface Props {
   products: Product[];
@@ -8,21 +8,39 @@ interface Props {
   onChange: (ids: string[]) => void;
 }
 
-const BUILT_IN_ORDER = ['cleanser', 'toner', 'serum', 'moisturiser', 'spf', 'treatment', 'other'];
+const BUILT_IN_ORDER = [
+  'cleanser',
+  'toner',
+  'serum',
+  'moisturiser',
+  'spf',
+  'treatment',
+  'other',
+];
 
-export default function ProductMultiSelect({ products, selected, onChange }: Props) {
+export default function ProductMultiSelect({
+  products,
+  selected,
+  onChange,
+}: Props) {
   function toggle(id: string) {
     onChange(
-      selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id],
+      selected.includes(id)
+        ? selected.filter((s) => s !== id)
+        : [...selected, id],
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-2xl border-2 border-dashed border-white/25 dark:border-white/10
-                      px-4 py-6 text-center backdrop-blur">
+      <div
+        className="flex flex-col items-center rounded-2xl border-2 border-dashed border-white/25 dark:border-white/10
+                      px-4 py-6 text-center backdrop-blur"
+      >
         <span className="mb-2 text-xl opacity-40">🧴</span>
-        <p className="text-sm text-gray-400 dark:text-gray-500">Your product library is empty</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">
+          Your product library is empty
+        </p>
         <Link to="/products" className="btn-primary mt-3">
           Add your first product &rarr;
         </Link>
@@ -65,7 +83,9 @@ export default function ProductMultiSelect({ products, selected, onChange }: Pro
                     }`}
                 >
                   {product.name}
-                  <span className={`ml-1.5 text-xs ${isSelected ? 'text-sand-200' : 'text-gray-400 dark:text-gray-500'}`}>
+                  <span
+                    className={`ml-1.5 text-xs ${isSelected ? 'text-sand-200' : 'text-gray-400 dark:text-gray-500'}`}
+                  >
                     {product.brand}
                   </span>
                 </button>

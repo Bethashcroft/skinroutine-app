@@ -7,8 +7,13 @@ export default function Resources() {
   const { profile } = useSkinProfile();
 
   const sorted = useMemo(() => {
-    if (!profile) return RETAILERS.map((retailer) => ({ retailer, matchScore: 0 }));
-    return sortRetailersForProfile(RETAILERS, profile.skinType, profile.concerns);
+    if (!profile)
+      return RETAILERS.map((retailer) => ({ retailer, matchScore: 0 }));
+    return sortRetailersForProfile(
+      RETAILERS,
+      profile.skinType,
+      profile.concerns,
+    );
   }, [profile]);
 
   const topMatches = sorted.filter((r) => r.matchScore > 0);
@@ -28,9 +33,20 @@ export default function Resources() {
 
       {profile && topMatches.length > 0 && (
         <p className="text-xs text-sand-600 dark:text-sand-400 -mt-2">
-          Picks for {SKIN_TYPES.find((t) => t.value === profile.skinType)?.label.toLowerCase()} skin
+          Picks for{' '}
+          {SKIN_TYPES.find(
+            (t) => t.value === profile.skinType,
+          )?.label.toLowerCase()}{' '}
+          skin
           {profile.concerns.length > 0 && (
-            <> · {profile.concerns.map((c) => CONCERNS.find((x) => x.value === c)?.label).filter(Boolean).join(', ')}</>
+            <>
+              {' '}
+              ·{' '}
+              {profile.concerns
+                .map((c) => CONCERNS.find((x) => x.value === c)?.label)
+                .filter(Boolean)
+                .join(', ')}
+            </>
           )}
         </p>
       )}
@@ -49,10 +65,12 @@ export default function Resources() {
                        dark:hover:bg-white/8 dark:hover:border-white/15"
           >
             <div className="flex items-start gap-4 p-5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl
                               bg-white/40 dark:bg-white/8 backdrop-blur border border-white/30 dark:border-white/10
                               shadow-sm text-lg font-bold text-sand-700 dark:text-sand-300
-                              group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
+                              group-hover:shadow-md group-hover:scale-105 transition-all duration-300"
+              >
                 {r.name.charAt(0)}
               </div>
 
@@ -62,17 +80,26 @@ export default function Resources() {
                     {r.name}
                   </h3>
                   {matchScore > 0 && (
-                    <span className="rounded-full bg-sand-500/15 dark:bg-sand-400/10 border border-sand-400/25 dark:border-sand-500/15
-                                     px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sand-700 dark:text-sand-300">
+                    <span
+                      className="rounded-full bg-sand-500/15 dark:bg-sand-400/10 border border-sand-400/25 dark:border-sand-500/15
+                                     px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sand-700 dark:text-sand-300"
+                    >
                       Good match
                     </span>
                   )}
                   <svg
                     className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 opacity-0 -translate-x-1
                                group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
-                    fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+                    />
                   </svg>
                 </div>
 
@@ -110,7 +137,8 @@ export default function Resources() {
       </div>
 
       <p className="text-center text-xs text-gray-400/60 dark:text-gray-600/60 pt-2">
-        All links open in a new tab. We&apos;re not affiliated with any of these retailers.
+        All links open in a new tab. We&apos;re not affiliated with any of these
+        retailers.
       </p>
     </div>
   );

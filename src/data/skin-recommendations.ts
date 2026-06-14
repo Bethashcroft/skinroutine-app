@@ -5,8 +5,16 @@ export const SKIN_TYPES: { value: SkinType; label: string; desc: string }[] = [
   { value: 'normal', label: 'Normal', desc: 'Generally balanced, few issues' },
   { value: 'oily', label: 'Oily', desc: 'Shiny T-zone, enlarged pores' },
   { value: 'dry', label: 'Dry', desc: 'Tight, flaky, sometimes rough' },
-  { value: 'combination', label: 'Combination', desc: 'Oily T-zone, dry cheeks' },
-  { value: 'sensitive', label: 'Sensitive', desc: 'Easily irritated, redness-prone' },
+  {
+    value: 'combination',
+    label: 'Combination',
+    desc: 'Oily T-zone, dry cheeks',
+  },
+  {
+    value: 'sensitive',
+    label: 'Sensitive',
+    desc: 'Easily irritated, redness-prone',
+  },
 ];
 
 export const CONCERNS: { value: Concern; label: string; icon: string }[] = [
@@ -20,11 +28,46 @@ export const CONCERNS: { value: Concern; label: string; icon: string }[] = [
 
 export const CONCERN_KEYWORDS: Record<Concern, string[]> = {
   acne: ['salicylic acid', 'niacinamide', 'zinc', 'benzoyl peroxide', 'bha'],
-  ageing: ['retinol', 'retinaldehyde', 'peptide', 'vitamin c', 'ascorbic', 'hyaluronic'],
-  dryness: ['hyaluronic', 'ceramide', 'glycerin', 'squalane', 'panthenol', 'shea'],
-  pigmentation: ['vitamin c', 'ascorbic', 'arbutin', 'niacinamide', 'tranexamic', 'azelaic'],
-  sensitivity: ['ceramide', 'centella', 'panthenol', 'allantoin', 'bisabolol', 'aloe'],
-  texture: ['glycolic acid', 'lactic acid', 'aha', 'salicylic', 'niacinamide', 'retinol'],
+  ageing: [
+    'retinol',
+    'retinaldehyde',
+    'peptide',
+    'vitamin c',
+    'ascorbic',
+    'hyaluronic',
+  ],
+  dryness: [
+    'hyaluronic',
+    'ceramide',
+    'glycerin',
+    'squalane',
+    'panthenol',
+    'shea',
+  ],
+  pigmentation: [
+    'vitamin c',
+    'ascorbic',
+    'arbutin',
+    'niacinamide',
+    'tranexamic',
+    'azelaic',
+  ],
+  sensitivity: [
+    'ceramide',
+    'centella',
+    'panthenol',
+    'allantoin',
+    'bisabolol',
+    'aloe',
+  ],
+  texture: [
+    'glycolic acid',
+    'lactic acid',
+    'aha',
+    'salicylic',
+    'niacinamide',
+    'retinol',
+  ],
 };
 
 export const SKIN_TYPE_KEYWORDS: Partial<Record<SkinType, string[]>> = {
@@ -35,8 +78,8 @@ export const SKIN_TYPE_KEYWORDS: Partial<Record<SkinType, string[]>> = {
 
 const KEYWORD_LABELS: Record<string, string> = {
   'salicylic acid': 'Salicylic acid (BHA)',
-  'niacinamide': 'Niacinamide',
-  'zinc': 'Zinc',
+  niacinamide: 'Niacinamide',
+  zinc: 'Zinc',
   'benzoyl peroxide': 'Benzoyl peroxide',
   bha: 'BHA',
   retinol: 'Retinol',
@@ -79,7 +122,8 @@ function buildKeywordSources(skinType: SkinType | null, concerns: Concern[]) {
     }
   }
   if (skinType && SKIN_TYPE_KEYWORDS[skinType]) {
-    const typeLabel = SKIN_TYPES.find((t) => t.value === skinType)?.label ?? skinType;
+    const typeLabel =
+      SKIN_TYPES.find((t) => t.value === skinType)?.label ?? skinType;
     for (const kw of SKIN_TYPE_KEYWORDS[skinType]!) {
       const list = sources.get(kw) ?? [];
       if (!list.includes(`${typeLabel} skin`)) list.push(`${typeLabel} skin`);
@@ -139,5 +183,7 @@ export function getRecommendations(
   concerns: Concern[],
   limit = 8,
 ): BuiltInProduct[] {
-  return getRecommendationsWithReasons(skinType, concerns, limit).map((s) => s.product);
+  return getRecommendationsWithReasons(skinType, concerns, limit).map(
+    (s) => s.product,
+  );
 }

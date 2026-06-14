@@ -1,30 +1,51 @@
 import { describe, it, expect } from 'vitest';
-import { detectFlagsFromIngredients, findFlaggedSubstrings } from './product-search';
+import {
+  detectFlagsFromIngredients,
+  findFlaggedSubstrings,
+  DETECTABLE_FLAG_KEYS,
+} from './product-search';
+import { getPickerOptionsByCategory } from './ingredient-flags';
 
 describe('detectFlagsFromIngredients', () => {
   it('detects a simple active', () => {
-    expect(detectFlagsFromIngredients('Aqua, Retinol, Glycerin')).toContain('retinol');
+    expect(detectFlagsFromIngredients('Aqua, Retinol, Glycerin')).toContain(
+      'retinol',
+    );
   });
 
   it('maps ingredient synonyms to a single flag key', () => {
-    expect(detectFlagsFromIngredients('Sodium Hyaluronate')).toContain('hyaluronic-acid');
-    expect(detectFlagsFromIngredients('Hyaluronic Acid')).toContain('hyaluronic-acid');
-    expect(detectFlagsFromIngredients('Ascorbyl Glucoside')).toContain('vitamin-c');
+    expect(detectFlagsFromIngredients('Sodium Hyaluronate')).toContain(
+      'hyaluronic-acid',
+    );
+    expect(detectFlagsFromIngredients('Hyaluronic Acid')).toContain(
+      'hyaluronic-acid',
+    );
+    expect(detectFlagsFromIngredients('Ascorbyl Glucoside')).toContain(
+      'vitamin-c',
+    );
   });
 
   it('detects multiple distinct flags', () => {
-    const flags = detectFlagsFromIngredients('Aqua, Niacinamide, Salicylic Acid, Limonene');
-    expect(flags).toEqual(expect.arrayContaining(['niacinamide', 'salicylic-acid', 'limonene']));
+    const flags = detectFlagsFromIngredients(
+      'Aqua, Niacinamide, Salicylic Acid, Limonene',
+    );
+    expect(flags).toEqual(
+      expect.arrayContaining(['niacinamide', 'salicylic-acid', 'limonene']),
+    );
   });
 
   it('does NOT flag bare "alcohol" inside "Cetearyl Alcohol" (word boundary)', () => {
     // Cetearyl Alcohol / Benzyl Alcohol are not the irritant "alcohol"
-    const flags = detectFlagsFromIngredients('Aqua, Cetearyl Alcohol, Glycerin');
+    const flags = detectFlagsFromIngredients(
+      'Aqua, Cetearyl Alcohol, Glycerin',
+    );
     expect(flags).not.toContain('alcohol');
   });
 
   it('flags standalone "Alcohol" as an irritant', () => {
-    expect(detectFlagsFromIngredients('Aqua, Alcohol, Glycerin')).toContain('alcohol');
+    expect(detectFlagsFromIngredients('Aqua, Alcohol, Glycerin')).toContain(
+      'alcohol',
+    );
   });
 
   it('detects "Alcohol Denat." distinctly from plain alcohol', () => {
@@ -39,7 +60,9 @@ describe('detectFlagsFromIngredients', () => {
   });
 
   it('returns an empty array for a clean ingredient list', () => {
-    expect(detectFlagsFromIngredients('Aqua, Glycerin, Sodium Chloride')).toEqual([]);
+    expect(
+      detectFlagsFromIngredients('Aqua, Glycerin, Sodium Chloride'),
+    ).toEqual([]);
   });
 
   it('is case-insensitive', () => {
@@ -48,8 +71,20 @@ describe('detectFlagsFromIngredients', () => {
   });
 
   it('deduplicates a flag that appears via multiple synonyms', () => {
-    const flags = detectFlagsFromIngredients('Ceramide NP, Ceramide AP, Ceramide EOP');
+    const flags = detectFlagsFromIngredients(
+      'Ceramide NP, Ceramide AP, Ceramide EOP',
+    );
     expect(flags.filter((f) => f === 'ceramides')).toHaveLength(1);
+  });
+});
+
+describe('flag key consistency', () => {
+  it('every detectable flag key has a matching picker option', () => {
+    const pickerKeys = new Set(
+      getPickerOptionsByCategory().flatMap((g) => g.options.map((o) => o.key)),
+    );
+    const orphans = DETECTABLE_FLAG_KEYS.filter((k) => !pickerKeys.has(k));
+    expect(orphans).toEqual([]);
   });
 });
 
@@ -64,7 +99,9 @@ describe('findFlaggedSubstrings', () => {
 
   it('locates the correct substring span for a flag', () => {
     const text = 'Aqua, Retinol, Glycerin';
-    const match = findFlaggedSubstrings(text).find((m) => m.flagKey === 'retinol');
+    const match = findFlaggedSubstrings(text).find(
+      (m) => m.flagKey === 'retinol',
+    );
     expect(match).toBeDefined();
     expect(text.slice(match!.start, match!.end).toLowerCase()).toBe('retinol');
   });

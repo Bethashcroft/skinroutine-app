@@ -26,7 +26,9 @@ export default function SkinProfileEditor({
   const [saving, setSaving] = useState(false);
 
   function toggleConcern(c: Concern) {
-    setConcerns((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
+    setConcerns((prev) =>
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c],
+    );
   }
 
   async function handleSave() {
@@ -42,7 +44,9 @@ export default function SkinProfileEditor({
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Skin type</p>
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
+          Skin type
+        </p>
         <div className="flex flex-wrap gap-1.5">
           {SKIN_TYPES.map((t) => {
             const active = skinType === t.value;
@@ -52,9 +56,10 @@ export default function SkinProfileEditor({
                 type="button"
                 onClick={() => setSkinType(t.value)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all border
-                  ${active
-                    ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
-                    : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
+                  ${
+                    active
+                      ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
+                      : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
                   }`}
               >
                 {t.label}
@@ -64,7 +69,9 @@ export default function SkinProfileEditor({
         </div>
       </div>
       <div>
-        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Concerns</p>
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
+          Concerns
+        </p>
         <div className="flex flex-wrap gap-1.5">
           {CONCERNS.map((c) => {
             const active = concerns.includes(c.value);
@@ -74,9 +81,10 @@ export default function SkinProfileEditor({
                 type="button"
                 onClick={() => toggleConcern(c.value)}
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all border
-                  ${active
-                    ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
-                    : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
+                  ${
+                    active
+                      ? 'bg-sand-500/15 border-sand-400/30 text-sand-700 dark:bg-sand-400/10 dark:border-sand-500/20 dark:text-sand-300 shadow-sm'
+                      : 'bg-white/20 dark:bg-white/4 border-white/20 dark:border-white/8 text-gray-600 dark:text-gray-400 hover:bg-white/30 dark:hover:bg-white/6'
                   }`}
               >
                 {c.icon} {c.label}
@@ -86,12 +94,20 @@ export default function SkinProfileEditor({
         </div>
       </div>
       <div className="flex gap-2 pt-1 justify-end">
-        <button type="button" onClick={handleSave} disabled={saving}
-          className="btn-primary px-4! py-1.5! text-xs! disabled:opacity-50">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-primary px-4! py-1.5! text-xs! disabled:opacity-50"
+        >
           {saving ? 'Saving…' : saveLabel}
         </button>
-        <button type="button" onClick={onCancel} disabled={saving}
-          className="btn-ghost px-4! py-1.5! text-xs!">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="btn-ghost px-4! py-1.5! text-xs!"
+        >
           Cancel
         </button>
       </div>

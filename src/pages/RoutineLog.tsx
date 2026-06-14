@@ -21,7 +21,9 @@ export default function RoutineLog() {
   const { products } = useProducts();
   const { entries, addEntry, updateEntry, deleteEntry } = useRoutineLog();
 
-  const [selectedDate, setSelectedDate] = useState(() => toLocalDateString(new Date()));
+  const [selectedDate, setSelectedDate] = useState(() =>
+    toLocalDateString(new Date()),
+  );
   const [form, setForm] = useState<FormState>({ kind: 'closed' });
 
   const dayEntries = useMemo(
@@ -77,12 +79,18 @@ export default function RoutineLog() {
     }
   }
 
-  function handleAdd(session: 'AM' | 'PM', data: { productIds: string[]; skinRating: SkinRating; notes: string }) {
+  function handleAdd(
+    session: 'AM' | 'PM',
+    data: { productIds: string[]; skinRating: SkinRating; notes: string },
+  ) {
     addEntry({ date: selectedDate, session, ...data });
     setForm({ kind: 'closed' });
   }
 
-  function handleUpdate(id: string, data: { productIds: string[]; skinRating: SkinRating; notes: string }) {
+  function handleUpdate(
+    id: string,
+    data: { productIds: string[]; skinRating: SkinRating; notes: string },
+  ) {
     updateEntry(id, data);
     setForm({ kind: 'closed' });
   }
@@ -107,8 +115,12 @@ export default function RoutineLog() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">Routine Log</h2>
-        <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">Track your daily skincare</p>
+        <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
+          Routine Log
+        </h2>
+        <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
+          Track your daily skincare
+        </p>
       </div>
 
       {/* Date navigator */}
@@ -122,16 +134,30 @@ export default function RoutineLog() {
                      dark:bg-white/6 dark:border-white/8 dark:text-sand-400 dark:hover:bg-white/12"
           aria-label="Previous day"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
           </svg>
         </button>
         <div className="text-center">
-          <span className="block text-sm font-bold text-gray-700 dark:text-gray-200 tracking-tight">{displayDate}</span>
+          <span className="block text-sm font-bold text-gray-700 dark:text-gray-200 tracking-tight">
+            {displayDate}
+          </span>
           {isToday && (
-            <span className="inline-block mt-0.5 rounded-full bg-white/30 dark:bg-white/8 backdrop-blur
+            <span
+              className="inline-block mt-0.5 rounded-full bg-white/30 dark:bg-white/8 backdrop-blur
                              px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-sand-600 dark:text-sand-400
-                             border border-white/20 dark:border-white/8">
+                             border border-white/20 dark:border-white/8"
+            >
               Today
             </span>
           )}
@@ -146,8 +172,18 @@ export default function RoutineLog() {
                      dark:bg-white/6 dark:border-white/8 dark:text-sand-400 dark:hover:bg-white/12"
           aria-label="Next day"
         >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
           </svg>
         </button>
       </div>
@@ -210,9 +246,16 @@ interface SessionSectionProps {
   canRepeat: boolean;
   onRepeat: () => void;
   onAdd: () => void;
-  onSubmit: (data: { productIds: string[]; skinRating: SkinRating; notes: string }) => void;
+  onSubmit: (data: {
+    productIds: string[];
+    skinRating: SkinRating;
+    notes: string;
+  }) => void;
   onEdit: (entry: RoutineEntry) => void;
-  onUpdate: (id: string, data: { productIds: string[]; skinRating: SkinRating; notes: string }) => void;
+  onUpdate: (
+    id: string,
+    data: { productIds: string[]; skinRating: SkinRating; notes: string },
+  ) => void;
   onDelete: (id: string) => void;
   onCancel: () => void;
 }
@@ -233,7 +276,8 @@ function SessionSection({
   onCancel,
 }: SessionSectionProps) {
   const isAddingThis = form.kind === 'add' && form.session === session;
-  const editingEntry = form.kind === 'edit' && form.entry.session === session ? form.entry : null;
+  const editingEntry =
+    form.kind === 'edit' && form.entry.session === session ? form.entry : null;
 
   const isAM = session === 'AM';
   const accentColor = isAM ? 'bg-sand-400' : 'bg-violet-400/80';
@@ -248,7 +292,11 @@ function SessionSection({
             <span className="text-lg">{emoji}</span> {label} Routine
           </h3>
           {!isAddingThis && !editingEntry && (
-            <button type="button" onClick={onAdd} className="btn-ghost px-4! py-2! text-xs!">
+            <button
+              type="button"
+              onClick={onAdd}
+              className="btn-ghost px-4! py-2! text-xs!"
+            >
               + Log {label.toLowerCase()}
             </button>
           )}

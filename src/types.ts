@@ -32,7 +32,13 @@ export interface Product {
 
 export type SkinType = 'oily' | 'dry' | 'combination' | 'sensitive' | 'normal';
 
-export type Concern = 'acne' | 'ageing' | 'dryness' | 'pigmentation' | 'sensitivity' | 'texture';
+export type Concern =
+  | 'acne'
+  | 'ageing'
+  | 'dryness'
+  | 'pigmentation'
+  | 'sensitivity'
+  | 'texture';
 
 export interface SkinProfile {
   skinType: SkinType;

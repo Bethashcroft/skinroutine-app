@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { dbGet, dbSet, migrateFromLocalStorage } from '../lib/db';
 
 let migrationDone = false;
@@ -17,40 +17,39 @@ function ensureMigration(): Promise<void> {
 export function useStoredState<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [isReady, setIsReady] = useState(false);
-  const loaded = useRef(false);
-  const initialRef = useRef(initialValue);
+  const [prevKey, setPrevKey] = useState(key);
+
+  if (key !== prevKey) {
+    setPrevKey(key);
+    setStoredValue(initialValue);
+    setIsReady(false);
+  }
 
   useEffect(() => {
-    let cancelled = false;
-    loaded.current = false;
-    setIsReady(false);
-    setStoredValue(initialRef.current);
+    let active = true;
 
     ensureMigration()
       .then(() => dbGet<T>(key))
       .then((value) => {
-        if (!cancelled) {
-          if (value !== undefined) setStoredValue(value);
-          loaded.current = true;
-          setIsReady(true);
-        }
+        if (!active) return;
+        if (value !== undefined) setStoredValue(value);
+        setIsReady(true);
       });
 
-    return () => { cancelled = true; };
+    return () => {
+      active = false;
+    };
   }, [key]);
 
   useEffect(() => {
-    if (!loaded.current) return;
+    if (!isReady) return;
     dbSet(key, storedValue).catch(() => {
       console.warn(`Failed to persist "${key}" to IndexedDB`);
     });
-  }, [key, storedValue]);
+  }, [key, storedValue, isReady]);
 
   const setValue = useCallback((value: T | ((prev: T) => T)) => {
-    setStoredValue((prev) => {
-      const next = value instanceof Function ? value(prev) : value;
-      return next;
-    });
+    setStoredValue((prev) => (value instanceof Function ? value(prev) : value));
   }, []);
 
   return [storedValue, setValue, isReady] as const;

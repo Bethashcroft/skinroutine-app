@@ -1,7 +1,11 @@
 import { Component, type ReactNode } from 'react';
 
-interface Props { children: ReactNode }
-interface State { error: Error | null }
+interface Props {
+  children: ReactNode;
+}
+interface State {
+  error: Error | null;
+}
 
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
@@ -29,7 +33,9 @@ export default class ErrorBoundary extends Component<Props, State> {
             Reload app
           </button>
           <details className="mt-4 max-w-sm text-left">
-            <summary className="text-xs text-gray-400 cursor-pointer">Technical details</summary>
+            <summary className="text-xs text-gray-400 cursor-pointer">
+              Technical details
+            </summary>
             <pre className="mt-2 text-[10px] text-red-500 dark:text-red-400 whitespace-pre-wrap break-all">
               {this.state.error.message}
             </pre>

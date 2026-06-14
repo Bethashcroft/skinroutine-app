@@ -12,18 +12,24 @@ import SkinProfileChips from '../components/SkinProfileChips';
 
 export default function Settings() {
   const fileRef = useRef<HTMLInputElement>(null);
-  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [importStatus, setImportStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle');
   const { user, signOut, deleteAccount } = useAuth();
   const { products } = useProducts();
   const { entries } = useRoutineLog();
   const { profile, setProfile } = useSkinProfile();
   const navigate = useNavigate();
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
+  const [syncStatus, setSyncStatus] = useState<
+    'idle' | 'syncing' | 'done' | 'error'
+  >('idle');
   const [syncFailedOpen, setSyncFailedOpen] = useState(false);
 
   async function handleExport() {
     const data = await dbGetAll();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json',
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -39,6 +45,9 @@ export default function Settings() {
     reader.onload = async () => {
       try {
         const data = JSON.parse(reader.result as string);
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          throw new Error('Backup must be a JSON object');
+        }
         for (const [key, value] of Object.entries(data)) {
           await dbSet(key, value);
         }
@@ -49,6 +58,7 @@ export default function Settings() {
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
   }
 
   async function handleClearAll() {
@@ -86,7 +96,9 @@ export default function Settings() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [notifPermission, setNotifPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+  const [notifPermission, setNotifPermission] = useState<
+    NotificationPermission | 'unsupported'
+  >(() => {
     if (typeof Notification === 'undefined') return 'unsupported';
     return Notification.permission;
   });
@@ -109,7 +121,6 @@ export default function Settings() {
     }
   }
 
-
   return (
     <div className="space-y-6">
       <SyncFailedModal
@@ -119,8 +130,12 @@ export default function Settings() {
         retrying={syncStatus === 'syncing'}
       />
       <div>
-        <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">Settings</h2>
-        <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">Manage your account and data</p>
+        <h2 className="text-xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">
+          Settings
+        </h2>
+        <p className="mt-0.5 text-sm text-gray-400 dark:text-gray-500">
+          Manage your account and data
+        </p>
       </div>
 
       {/* Account section */}
@@ -130,19 +145,29 @@ export default function Settings() {
             <>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Account</h3>
+                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                    Account
+                  </h3>
                   <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-                    Signed in as <strong className="text-gray-600 dark:text-gray-300">{user.email}</strong>
+                    Signed in as{' '}
+                    <strong className="text-gray-600 dark:text-gray-300">
+                      {user.email}
+                    </strong>
                   </p>
                 </div>
-                <button type="button" onClick={handleSignOut}
-                  className="btn-ghost w-full sm:w-auto text-red-500! dark:text-red-400!">
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="btn-ghost w-full sm:w-auto text-red-500! dark:text-red-400!"
+                >
                   Sign out
                 </button>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Delete account</h3>
+                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                    Delete account
+                  </h3>
                   <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                     Permanently removes your account and all associated data
                   </p>
@@ -150,10 +175,14 @@ export default function Settings() {
                 {confirmDelete ? (
                   <div className="flex flex-col gap-2 sm:items-end">
                     {deleteError && (
-                      <p className="text-xs text-red-500 dark:text-red-400">{deleteError}</p>
+                      <p className="text-xs text-red-500 dark:text-red-400">
+                        {deleteError}
+                      </p>
                     )}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-red-500 dark:text-red-400">This cannot be undone!</span>
+                      <span className="text-xs text-red-500 dark:text-red-400">
+                        This cannot be undone!
+                      </span>
                       <button
                         type="button"
                         onClick={handleDeleteAccount}
@@ -162,7 +191,14 @@ export default function Settings() {
                       >
                         {deleting ? 'Deleting…' : 'Confirm'}
                       </button>
-                      <button type="button" onClick={() => { setConfirmDelete(false); setDeleteError(''); }} className="btn-ghost px-4! py-2.5!">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConfirmDelete(false);
+                          setDeleteError('');
+                        }}
+                        className="btn-ghost px-4! py-2.5!"
+                      >
                         Cancel
                       </button>
                     </div>
@@ -181,7 +217,9 @@ export default function Settings() {
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
                 <div>
-                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Cloud sync</h3>
+                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                    Cloud sync
+                  </h3>
                   <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                     Push all local data to the cloud right now
                   </p>
@@ -205,12 +243,18 @@ export default function Settings() {
           ) : (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
               <div>
-                <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Account</h3>
+                <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                  Account
+                </h3>
                 <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                   Sign in to sync your data across devices
                 </p>
               </div>
-              <button type="button" onClick={() => navigate('/auth')} className="btn-primary w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => navigate('/auth')}
+                className="btn-primary w-full sm:w-auto"
+              >
                 Sign in
               </button>
             </div>
@@ -223,30 +267,48 @@ export default function Settings() {
         <div className="card-solid noise overflow-hidden divide-y divide-white/15 dark:divide-white/8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
             <div>
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Product expiry alerts</h3>
+              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                Product expiry alerts
+              </h3>
               <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
                 {notifPermission === 'granted'
-                  ? 'Notifications enabled — you\'ll be alerted at 30, 7, and 1 day before a product expires'
+                  ? "Notifications enabled — you'll be alerted at 30, 7, and 1 day before a product expires"
                   : notifPermission === 'denied'
                     ? 'Notifications blocked — enable them in your browser settings'
                     : 'Get notified when products are about to expire (30, 7, and 1 day warnings)'}
               </p>
             </div>
             {notifPermission === 'default' && (
-              <button type="button" onClick={requestNotifications} className="btn-primary w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={requestNotifications}
+                className="btn-primary w-full sm:w-auto"
+              >
                 Enable
               </button>
             )}
             {notifPermission === 'granted' && (
               <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 Enabled
               </span>
             )}
             {notifPermission === 'denied' && (
-              <span className="text-xs font-medium text-gray-400 dark:text-gray-500">Blocked in browser</span>
+              <span className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                Blocked in browser
+              </span>
             )}
           </div>
         </div>
@@ -256,9 +318,13 @@ export default function Settings() {
       <div className="card-solid noise overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/15 dark:border-white/8">
           <div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Skin profile</h3>
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+              Skin profile
+            </h3>
             <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
-              {profile ? 'Your skin type and concerns' : 'Set up your profile for personalised recommendations'}
+              {profile
+                ? 'Your skin type and concerns'
+                : 'Set up your profile for personalised recommendations'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -271,8 +337,11 @@ export default function Settings() {
                 >
                   Retake quiz
                 </button>
-                <button type="button" onClick={() => setEditingProfile(true)}
-                  className="btn-ghost px-3! py-1.5! text-xs! rounded-lg!">
+                <button
+                  type="button"
+                  onClick={() => setEditingProfile(true)}
+                  className="btn-ghost px-3! py-1.5! text-xs! rounded-lg!"
+                >
                   Edit
                 </button>
               </>
@@ -296,7 +365,11 @@ export default function Settings() {
           <SkinProfileChips profile={profile} className="px-5 py-4" />
         ) : (
           <div className="px-5 py-4">
-            <button type="button" onClick={() => setEditingProfile(true)} className="btn-primary w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setEditingProfile(true)}
+              className="btn-primary w-full sm:w-auto"
+            >
               Set up profile
             </button>
           </div>
@@ -307,42 +380,85 @@ export default function Settings() {
       <div className="card-solid noise overflow-hidden divide-y divide-white/15 dark:divide-white/8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
           <div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Export data</h3>
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Download all your products and routine logs as a JSON file</p>
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+              Export data
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              Download all your products and routine logs as a JSON file
+            </p>
           </div>
-          <button type="button" onClick={handleExport} className="btn-primary w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={handleExport}
+            className="btn-primary w-full sm:w-auto"
+          >
             Export
           </button>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
           <div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Import data</h3>
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Restore from a previously exported backup file</p>
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+              Import data
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              Restore from a previously exported backup file
+            </p>
           </div>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => fileRef.current?.click()} className="btn-ghost w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="btn-ghost w-full sm:w-auto"
+            >
               Import
             </button>
-            {importStatus === 'success' && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Imported!</span>}
-            {importStatus === 'error' && <span className="text-xs text-red-500 dark:text-red-400 font-medium">Invalid file</span>}
+            {importStatus === 'success' && (
+              <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                Imported!
+              </span>
+            )}
+            {importStatus === 'error' && (
+              <span className="text-xs text-red-500 dark:text-red-400 font-medium">
+                Invalid file
+              </span>
+            )}
           </div>
-          <input ref={fileRef} type="file" accept=".json" onChange={handleImport} className="hidden" />
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json"
+            onChange={handleImport}
+            className="hidden"
+          />
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5">
           <div>
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Clear all data</h3>
-            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">Permanently delete all local products, logs and cached data</p>
+            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+              Clear all data
+            </h3>
+            <p className="mt-0.5 text-xs text-gray-400 dark:text-gray-500">
+              Permanently delete all local products, logs and cached data
+            </p>
           </div>
           {confirmClear ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-red-500 dark:text-red-400">This cannot be undone!</span>
-              <button type="button" onClick={handleClearAll}
-                className="rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-red-600">
+              <span className="text-xs text-red-500 dark:text-red-400">
+                This cannot be undone!
+              </span>
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-red-600"
+              >
                 Confirm
               </button>
-              <button type="button" onClick={() => setConfirmClear(false)} className="btn-ghost px-4! py-2.5!">
+              <button
+                type="button"
+                onClick={() => setConfirmClear(false)}
+                className="btn-ghost px-4! py-2.5!"
+              >
                 Cancel
               </button>
             </div>

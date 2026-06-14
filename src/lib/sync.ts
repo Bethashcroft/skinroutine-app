@@ -1,5 +1,11 @@
 import { supabase } from './supabase';
-import type { Product, RoutineEntry, SkinProfile, SkinType, Concern } from '../types';
+import type {
+  Product,
+  RoutineEntry,
+  SkinProfile,
+  SkinType,
+  Concern,
+} from '../types';
 
 function productToRow(p: Product) {
   return {
@@ -22,7 +28,10 @@ function rowToProduct(row: Record<string, unknown>): Product {
     name: row.name as string,
     brand: row.brand as string,
     category: row.category as string,
-    flags: typeof row.flags === 'string' ? JSON.parse(row.flags) : (row.flags as Product['flags']),
+    flags:
+      typeof row.flags === 'string'
+        ? JSON.parse(row.flags)
+        : (row.flags as Product['flags']),
     ...(row.ingredients ? { ingredients: row.ingredients as string } : {}),
     ...(row.notes ? { notes: row.notes as string } : {}),
     ...(row.opened_at ? { openedAt: row.opened_at as string } : {}),
@@ -47,7 +56,10 @@ function rowToEntry(row: Record<string, unknown>): RoutineEntry {
     id: row.id as string,
     date: row.date as string,
     session: row.session as 'AM' | 'PM',
-    productIds: typeof row.product_ids === 'string' ? JSON.parse(row.product_ids) : (row.product_ids as string[]),
+    productIds:
+      typeof row.product_ids === 'string'
+        ? JSON.parse(row.product_ids)
+        : (row.product_ids as string[]),
     skinRating: row.skin_rating as RoutineEntry['skinRating'],
     notes: (row.notes as string) ?? '',
   };
@@ -134,9 +146,10 @@ export async function deleteRemoteEntry(id: string): Promise<void> {
 }
 
 function rowToProfile(row: Record<string, unknown>): SkinProfile {
-  const concerns = typeof row.concerns === 'string'
-    ? JSON.parse(row.concerns)
-    : (row.concerns as Concern[]);
+  const concerns =
+    typeof row.concerns === 'string'
+      ? JSON.parse(row.concerns)
+      : (row.concerns as Concern[]);
   return {
     skinType: row.skin_type as SkinType,
     concerns: concerns ?? [],
@@ -156,11 +169,12 @@ export async function pullProfile(): Promise<SkinProfile | null> {
 
 export async function pushProfile(profile: SkinProfile): Promise<void> {
   if (!supabase) return;
-  const { error } = await supabase
-    .from('user_skin_profiles')
-    .upsert({
+  const { error } = await supabase.from('user_skin_profiles').upsert(
+    {
       skin_type: profile.skinType,
       concerns: profile.concerns,
-    }, { onConflict: 'user_id' });
+    },
+    { onConflict: 'user_id' },
+  );
   if (error) throw error;
 }
